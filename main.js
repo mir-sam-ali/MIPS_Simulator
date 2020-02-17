@@ -1,0 +1,317 @@
+
+//console.log((x >>> 0).toString(2))
+
+
+
+//PARSER    
+
+//console.log("a\nb\r\nc".split(/\r?\n/))
+
+
+//CHANGE DISPLAY
+//CHANGE LW FOR NEGATIVE NUMBERS
+//CHANGE .DATA LOGIC
+
+var textArea = document.getElementById("ide")
+var submit = document.getElementById("submit")
+var memory = []
+var instructions = []
+var wordAddresses = []
+var PC = 0
+
+for (let i = 0; (i < 1024 * 8); i++) {
+    memory.push(0);
+}
+console.log(memory)
+
+//memory[27] = 32
+var registers = new Map(
+    [
+        ["r0", 0],
+        ["at", 0],
+        ["v0", 0],
+        ["v1", 0],
+        ["a0", 0],
+        ["a1", 0],
+        ["a2", 0],
+        ["a3", 0],
+        ["t0", 0],
+        ["t1", 0],
+        ["t2", 0],
+        ["t3", 0],
+        ["t4", 0],
+        ["t5", 0],
+        ["t6", 0],
+        ["t7", 0],
+        ["s0", 0],
+        ["s1", 0],
+        ["s2", 0],
+        ["s3", 0],
+        ["s4", 0],
+        ["s5", 0],
+        ["s6", 0],
+        ["s7", 0],
+        ["t8", 0],
+        ["t9", 0],
+        ["k0", 0],
+        ["k1", 0],
+        ["gp", 0],
+        ["sp", 0],
+        ["s8", 0],
+        ["ra", 0]]
+)
+//console.log(registers)
+
+
+function displayRegisters() {
+    let divReg = document.querySelector('.registerDiv')
+    divReg.innerHTML = ''
+    let i = 1
+    console.log(registers)
+    registers.forEach((value, key) => {
+        let h3text = `${i}."${key}" : ${(value >>> 0).toString(2)}`
+        let h3 = document.createElement('h4')
+        h3.textContent = h3text
+        divReg.appendChild(h3)
+        i += 1
+
+    })
+    console.log(divReg.innerHTML)
+}
+displayRegisters()
+
+
+function add(ins) {
+    console.log(ins)
+    let rd = ins[1][1] + ins[1][2]
+    let r1 = ins[2][1] + ins[2][2]
+    let r2 = ins[3][1] + ins[3][2]
+    let operand1 = registers.get(r1)
+    let operand2 = registers.get(r2)
+    let sum = operand1 + operand2
+    registers = registers.set(rd, sum)
+    // console.log(registers)
+    displayRegisters()
+}
+
+function addi(ins) {
+    console.log(ins)
+    let rd = ins[1][1] + ins[1][2]
+    let r1 = ins[2][1] + ins[2][2]
+    let decimal = parseInt(ins[3])
+    if (decimal > Math.pow(2, 16))
+        console.log("Instruction size is greater than 32 bits")
+    let operand1 = registers.get(r1)
+    let sum = operand1 + decimal
+    registers = registers.set(rd, sum)
+    // console.log(registers)
+    displayRegisters()
+}
+
+function sll(ins) {
+    console.log(ins)
+    let rd = ins[1][1] + ins[1][2]
+    let r1 = ins[2][1] + ins[2][2]
+    let decimal = ins[3]
+    if (decimal > Math.pow(2, 16))
+        console.log("Instruction size is greater than 32 bits")
+    let operand1 = registers.get(r1)
+    let shiftedNum = operand1 << parseInt(decimal)
+    console.log(operand1, parseInt(decimal))
+    registers = registers.set(rd, shiftedNum)
+    // console.log(registers)
+    displayRegisters()
+}
+
+function sub(ins) {
+    let rd = ins[1][1] + ins[1][2]
+    let r1 = ins[2][1] + ins[2][2]
+    let r2 = ins[3][1] + ins[3][2]
+    let operand1 = registers.get(r1)
+    let operand2 = registers.get(r2)
+    let diff = operand1 - operand2
+    registers = registers.set(rd, diff)
+    displayRegisters()
+}
+function slt(ins) {
+    console.log(ins)
+    let rd = ins[1][1] + ins[1][2]
+    let r1 = ins[2][1] + ins[2][2]
+    let r2 = ins[3][1] + ins[3][2]
+    let operand1 = registers.get(r1)
+    let operand2 = registers.get(r2)
+    console.log(operand1, operand2)
+    if (operand1 < operand2) {
+        registers = registers.set(rd, 1)
+        console.log(rd)
+    }
+    else
+        registers = registers.set(rd, 0)
+
+    displayRegisters()
+}
+
+
+function lw(ins) {
+    console.log(ins)
+    let rd = ins[1][1] + ins[1][2]
+    let offsetRegister = ins[2].split("\(")
+    console.log(offsetRegister)
+    let rs = offsetRegister[1].split(')')[0]
+    let finalAddress = registers.get(rs[1] + rs[2]) + offsetRegister[0] * 4
+    console.log(finalAddress)
+    console.log(memory)
+    let BinaryEquivalent = ""
+    BinaryEquivalent = memory[finalAddress - 1] + memory[finalAddress] + memory[finalAddress + 1] + memory[finalAddress + 2]
+    console.log(BinaryEquivalent)
+    //console.log(parseInt(BinaryEquivalent.slice(1, 32), 2), Math.pow(2 * parseInt(BinaryEquivalent[0]), 31))
+    decimalValue = parseInt(BinaryEquivalent.slice(1, 32), 2) - Math.pow(2 * parseInt(BinaryEquivalent[0]), 31)// Using 2s complement property
+    //console.log(decimalValue)
+    registers.set(rd, decimalValue)
+    displayRegisters()
+    // let r1 = ins[2][1] + ins[2][2]
+}
+
+function sw(ins, memoryIndex) {
+    console.log(ins)
+    let rd = ins[1][1] + ins[1][2]
+    let offsetRegister = ins[2].split("\(")
+    console.log(offsetRegister)
+    let rs = offsetRegister[1].split(')')[0]
+    let finalAddress = registers.get(rs[1] + rs[2]) + offsetRegister[0] * 4
+    console.log(finalAddress)
+    let numberToBeStored = registers.get(rd)
+    let BinaryEquivalent = (numberToBeStored >>> 0).toString(2)
+
+    let initialLength = BinaryEquivalent.length
+    for (let j = 0; j < (32 - initialLength); j += 1) {
+        BinaryEquivalent = "0" + BinaryEquivalent;
+    }
+
+    memory[finalAddress - 1] = BinaryEquivalent.slice(0, 8)
+    memory[finalAddress] = BinaryEquivalent.slice(8, 16)
+    memory[finalAddress + 1] = BinaryEquivalent.slice(16, 24)
+    memory[finalAddress + 2] = BinaryEquivalent.slice(24, 32)
+    console.log(memory)
+    wordAddresses.push(finalAddress - 1)
+    displayMemory(memoryIndex)//I have to change this
+    //displayRegisters()
+    // let r1 = ins[2][1] + ins[2][2]
+}
+
+function beq(ins, pc, jumpPositions) {
+    let r1 = ins[1][1] + ins[1][2]
+    let r2 = ins[2][1] + ins[2][2]
+
+    let r1Value = registers.get(r1)
+    let r2Value = registers.get(r2)
+    if (r1Value == r2Value) {
+        return jumpPositions.get(ins[3])
+    } else {
+        return pc
+    }
+}
+
+function jump(ins, jumpPositions) {
+    return jumpPositions.get(ins[1])
+}
+
+function displayMemory(memoryIndex) {
+    console.log(memoryIndex)
+    let memDiv = document.querySelector(".memoryDiv")
+    memDiv.innerHTML = ""
+    for (let i = 0; i < 50; i++) {
+        let span = document.createElement('span')
+        span.innerText = "\n[0x" + (i + 1).toString(16) + "]: " + memory[i] + "  "
+        memDiv.appendChild(span)
+    }
+    // for (let i = 0; i < wordAddresses.length; i++) {
+    //     let span = document.createElement('span')
+    //     span.innerText = "\n[0x" + (wordAddresses[i] + 1).toString(16) + "]: " + memory[wordAddresses[i]] + "  " + memory[wordAddresses[i] + 1] + " " + memory[wordAddresses[i] + 2] + " " + memory[wordAddresses[i] + 3] + " "
+    //     memDiv.appendChild(span)
+    // }
+}
+
+submit.onclick = () => {
+    console.log(registers)
+    memoryIndex = 0
+    instructions = textArea.value.split(/\r?\n/)
+    splitted = instructions.map((ins) => {
+        ins = ins.trim()
+        return ins.split(/[ ,.]+/)
+    })
+    let jumpPositions = new Map()
+    console.log(splitted)
+
+    for (let j = 0; j < splitted.length; j++) {
+        if (splitted[j][0][(splitted[j][0].length) - 1] == ':') {
+            jumpPositions.set((splitted[j][0].slice(0, splitted[j][0].length - 1)), j)
+        }
+    }
+    console.log(jumpPositions)
+
+    let arrayAddresses = new Map();//even for strings
+
+
+    for (let i = 1; i > 0; i++) {
+        if (splitted[i][1] == "text")
+            break;
+        else if (splitted[i][1] == "word") {
+            if (splitted[i].length != 3)
+                arrayAddresses.set(splitted[i - 1][0].split(":")[0], memoryIndex)
+            for (let j = 2; j < splitted[i].length; j++) {
+                // memory[memoryIndex - 1] = parseInt(splitted[i][j])
+                // memoryIndex += 1
+                let numberToBeStored = parseInt(splitted[i][j])
+                let BinaryEquivalent = (numberToBeStored >>> 0).toString(2)
+
+                let initialLength = BinaryEquivalent.length
+                for (let j = 0; j < (32 - initialLength); j += 1) {
+                    BinaryEquivalent = "0" + BinaryEquivalent;
+                }
+
+                memory[memoryIndex] = BinaryEquivalent.slice(0, 8)
+                memory[memoryIndex + 1] = BinaryEquivalent.slice(8, 16)
+                memory[memoryIndex + 2] = BinaryEquivalent.slice(16, 24)
+                memory[memoryIndex + 3] = BinaryEquivalent.slice(24, 32)
+                memoryIndex += 4;
+            }
+
+            console.log(memory)
+        }
+
+    }
+
+    displayMemory(memoryIndex)
+    console.log(arrayAddresses)
+
+    for (let i = 0; i < splitted.length; i++) {
+        console.log(registers.get("s3"))
+        console.log(splitted[i])
+        if (splitted[i][0] == "add")
+            add(splitted[i])
+        else if (splitted[i][0] == "sub")
+            sub(splitted[i])
+        else if (splitted[i][0] == "lw")
+            lw(splitted[i])
+        else if (splitted[i][0] == "sw")
+            sw(splitted[i], memoryIndex)
+        else if (splitted[i][0] == "beq")
+            i = beq(splitted[i], i, jumpPositions)
+        else if (splitted[i][0] == "j")
+            i = jump(splitted[i], jumpPositions)
+        else if (splitted[i][0] == "addi")
+            addi(splitted[i])
+        else if (splitted[i][0] == "slt")
+            slt(splitted[i])
+        else if (splitted[i][0] == "sll")
+            sll(splitted[i])
+        //sll
+        console.log(registers)
+    }
+
+}
+
+
+
+
