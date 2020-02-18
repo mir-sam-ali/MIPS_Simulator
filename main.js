@@ -7,10 +7,12 @@
 
 //console.log("a\nb\r\nc".split(/\r?\n/))
 
+//var codeMirror = require('codemirror')
 
-//CHANGE DISPLAY
-//CHANGE LW FOR NEGATIVE NUMBERS
-//CHANGE .DATA LOGIC
+
+
+
+
 
 var textArea = document.getElementById("ide")
 var submit = document.getElementById("submit")
@@ -18,6 +20,10 @@ var memory = []
 var instructions = []
 var wordAddresses = []
 var PC = 0
+// var myCodeMirror = CodeMirror.fromTextArea(textArea, {
+//     value: "Enter Code Here"
+// });
+
 
 for (let i = 0; (i < 1024 * 8); i++) {
     memory.push(0);
@@ -98,7 +104,12 @@ function addi(ins) {
     console.log(ins)
     let rd = ins[1][1] + ins[1][2]
     let r1 = ins[2][1] + ins[2][2]
-    let decimal = parseInt(ins[3])
+    let decimal = ''
+    if (ins[3].slice(0, 2) == "0x")
+        decimal = parseInt(ins[3], 16)
+    else
+        decimal = parseInt(ins[3])
+
     if (decimal > Math.pow(2, 16))
         console.log("Instruction size is greater than 32 bits")
     let operand1 = registers.get(r1)
@@ -112,7 +123,11 @@ function sll(ins) {
     console.log(ins)
     let rd = ins[1][1] + ins[1][2]
     let r1 = ins[2][1] + ins[2][2]
-    let decimal = ins[3]
+    let decimal = ''
+    if (ins[3].slice(0, 2) == "0x")
+        decimal = parseInt(ins[3], 16)
+    else
+        decimal = parseInt(ins[3])
     if (decimal > Math.pow(2, 16))
         console.log("Instruction size is greater than 32 bits")
     let operand1 = registers.get(r1)
@@ -313,5 +328,148 @@ submit.onclick = () => {
 }
 
 
+let jumpPositions_Next = new Map()
+let arrayAddresses_next = new Map();//even for strings
+let lineValue = 0;
+let splitted = []
+
+next.onclick = () => {
+    if (lineValue == 0) {
+        console.log(registers)
+        memoryIndex = 0
+        //console.log(myCodeMirror.getDoc())
+        instructions = textArea.value.split(/\r?\n/)
+        splitted = instructions.map((ins) => {
+            ins = ins.trim()
+            return ins.split(/[ ,.]+/)
+        })
+
+        console.log(splitted)
+
+        for (let j = 0; j < splitted.length; j++) {
+            if (splitted[j][0][(splitted[j][0].length) - 1] == ':') {
+                jumpPositions_Next.set((splitted[j][0].slice(0, splitted[j][0].length - 1)), j)
+            }
+        }
+        // console.log(jumpPositions_Next)
+        for (let i = 1; i > 0; i++) {
+            if (splitted[i][1] == "text") {
+                lineValue = i
+                break;
+            }
+            else if (splitted[i][1] == "word") {
+                if (splitted[i].length != 3)
+                    arrayAddresses_next.set(splitted[i - 1][0].split(":")[0], memoryIndex)
+                for (let j = 2; j < splitted[i].length; j++) {
+                    // memory[memoryIndex - 1] = parseInt(splitted[i][j])
+                    // memoryIndex += 1
+                    let numberToBeStored = parseInt(splitted[i][j])
+                    let BinaryEquivalent = (numberToBeStored >>> 0).toString(2)
+
+                    let initialLength = BinaryEquivalent.length
+                    for (let j = 0; j < (32 - initialLength); j += 1) {
+                        BinaryEquivalent = "0" + BinaryEquivalent;
+                    }
+
+                    memory[memoryIndex] = BinaryEquivalent.slice(0, 8)
+                    memory[memoryIndex + 1] = BinaryEquivalent.slice(8, 16)
+                    memory[memoryIndex + 2] = BinaryEquivalent.slice(16, 24)
+                    memory[memoryIndex + 3] = BinaryEquivalent.slice(24, 32)
+                    memoryIndex += 4;
+                }
+
+                console.log(memory)
+            }
+
+        }
+        displayMemory(memoryIndex)
+
+    }
 
 
+
+    //console.log(arrayAddresses_next)
+
+    if (lineValue < splitted.length) {
+        console.log(registers.get("s3"))
+        console.log(splitted[lineValue])
+        if (splitted[lineValue][0] == "add")
+            add(splitted[lineValue])
+        else if (splitted[lineValue][0] == "sub")
+            sub(splitted[lineValue])
+        else if (splitted[lineValue][0] == "lw")
+            lw(splitted[lineValue])
+        else if (splitted[lineValue][0] == "sw")
+            sw(splitted[lineValue], memoryIndex)
+        else if (splitted[lineValue][0] == "beq")
+            lineValue = beq(splitted[lineValue], lineValue, jumpPositions_Next)
+        else if (splitted[lineValue][0] == "j")
+            lineValue = jump(splitted[lineValue], jumpPositions_Next)
+        else if (splitted[lineValue][0] == "addi")
+            addi(splitted[lineValue])
+        else if (splitted[lineValue][0] == "slt")
+            slt(splitted[lineValue])
+        else if (splitted[lineValue][0] == "sll")
+            sll(splitted[lineValue])
+        //sll
+        lineValue += 1
+        console.log(registers)
+    }
+}
+
+
+
+
+
+
+
+
+// .data
+// array:
+// .word 5, 6, 1
+//     .text
+//     .globl main
+
+// main:
+// addi $s0, $s0, 1
+// addi $s1, $s1, 2
+
+
+// for1:
+// slt $s2, $s1, $at
+
+// beq $s2, $s0, end
+
+// addi $s3, $r0, 0
+
+// for2:
+// slt $s4, $s3, $s1
+
+// beq $s4, $at, end2
+
+// sll $t1, $s3, 2
+// add $t1, $t1, $s0
+// lw $t0, 0($t1)
+// addi $t2, $s3, 1
+// sll $t3, $t2, 2
+// add $t3, $t3, $s0
+// lw $t4, 0($t3)
+
+
+// slt $t6, $t4, $t0
+// beq $t6, $at, noswap
+
+
+// sw $t4, 0($t1)
+// sw $t0, 0($t3)
+
+// noswap:
+
+// addi $s3, $s3, 1
+// j for2
+
+// end2:
+// addi $s1, $s1, -1
+// j for1
+
+// end:
