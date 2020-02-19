@@ -31,7 +31,10 @@ for (let i = 0; (i < 1024 * 8); i++) {
 }
 // console.log(memory)
 
-
+//For changing tabs
+$('.menu .item')
+    .tab()
+    ;
 
 //Code For Uploading a file
 document.getElementById('input_file')
@@ -270,6 +273,7 @@ function displayMemory(memoryIndex) {
     memDiv.innerHTML = ""
     for (let i = 0; i < 50; i++) {
         let span = document.createElement('span')
+        span.classList.add("item")
         span.innerText = "\n[0x" + (i + 1).toString(16) + "]: " + memory[i] + "  "
         memDiv.appendChild(span)
     }

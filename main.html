@@ -25,15 +25,30 @@
     </div>
     <div class="ui grid ">
         <div class="four wide column">
-            <div class="ui segment" style="background-color: #17141d; color: white;">
+            <div class="ui top attached tabular menu " style="background-color: #17141d; color: white;">
+                <a class="item active" style="background-color: #17141d; color: white;" data-tab="registers">Registers</a>
+                <a class="item" style="background-color: #17141d; color: white;" data-tab="Memory">Memory</a>
+            </div>
+
+            <div class="ui segment bottom tab attached active" data-tab="registers" style="background-color: #17141d; color: white;">
                 <div class="ui inverted relaxed divided list">
                     <h2 class="ui blue inverted header" style="margin-left: 10px;">Registers</h2>
                     <div class=" registerDiv">
                     </div>
                 </div>
-
-
             </div>
+            <div class="ui segment bottom tab attached" data-tab="Memory" style="background-color: #17141d; color: white;">
+                <div class="ui inverted relaxed divided list">
+                    <h2 class="ui blue inverted header" style="margin-left: 10px;">Memory</h2>
+                    <div class="memoryDiv">
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
         </div>
         <div class="twelve wide column">
             <textarea name="" id="ide" cols="200" rows="50"></textarea>
@@ -60,10 +75,7 @@
     <!-- <div class="registerDiv">
 
     </div> -->
-    <div>
-        <h2>Memory</h2>
-        <div class="memoryDiv"></div>
-    </div>
+
     <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
         crossorigin="anonymous"></script>
     <script src="./Semantic-UI-CSS-master/semantic.min.js"></script>
