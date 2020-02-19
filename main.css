@@ -1,3 +1,111 @@
-.blue{
+body{
+    background: #100e17;
+}
+
+
+.blueLine{
     background-color: blue;
 }
+
+.registerDiv{
+    width: 100%;
+}
+#ide{
+display: inline;
+}
+
+.item{
+    
+    margin-left: 10px;
+    border-bottom: 0.5px solid gray;
+    padding-bottom: 2px;
+}
+
+
+/* 
+.inputfile {
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+.inputfile + label {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: white;
+    background-color: black;
+    display: inline-block;
+}
+
+.inputfile:focus + label,
+.inputfile + label:hover {
+    background-color: red;
+}
+.inputfile + label {
+	cursor: pointer; /* "hand" cursor */
+
+
+/* 
+
+
+
+.custom-file-input {
+    color: transparent;
+    width: 200px;
+  }
+  .custom-file-input::-webkit-file-upload-button {
+    visibility: hidden;
+  }
+  .custom-file-input::before {
+    content: 'Browse';
+    color: white;
+    display: inline-block;
+    background: linear-gradient(to top left,#ff8a00,#e52e71);
+    border: 1px solid #999;
+    border-radius: 3px;
+    padding: 5px 8px;
+    outline: none;
+    white-space: nowrap;
+    -webkit-user-select: none;
+    cursor: pointer;
+    text-shadow: 1px 1px #fff;
+    font-weight: 700;
+    font-size: 10pt;
+    
+    background-image: linear-gradient(to top left,#ff8a00,#e52e71);
+    color: #fff!important;
+    display: inline-block;
+    font-family: inherit;
+    font-weight: 700;
+    border: 0;
+    border-radius: 2rem;
+    white-space: nowrap;
+    padding: 1rem 1.5rem;
+    line-height: 1.4;
+    text-align: center;
+    -webkit-transition: .07s;
+    transition: .07s;
+    position: relative;
+    text-decoration: none!important;
+  }
+  .custom-file-input:hover::before {
+    border-color: black;
+  }
+  .custom-file-input:active {
+    outline: 0;
+  }
+  .custom-file-input:active::before {
+    background: -webkit-linear-gradient(top, #e3e3e3, #f9f9f9); 
+  }
+    */
+
+
+
+
+input[type="file"]{
+    display:none;
+
+}
+

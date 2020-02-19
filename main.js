@@ -107,8 +107,9 @@ function displayRegisters() {
     let i = 1
     console.log(registers)
     registers.forEach((value, key) => {
-        let h3text = `${i}."${key}" : ${(value >>> 0).toString(2)}`
+        let h3text = ` "${key}" : ${(value >>> 0).toString(2)}`
         let h3 = document.createElement('h4')
+        h3.classList.add("item")
         h3.textContent = h3text
         divReg.appendChild(h3)
         i += 1
@@ -292,7 +293,7 @@ submit.onclick = () => {
             splitted.push(ins.split(/[ ,.]+/))
         })
     })
-    // doc.markText({ line: 2, ch: 'a' }, { line: 3, ch: 'c' }, { css: "color: blue" })
+    // doc.markText({ line: 2, ch: 'a' }, { line: 3, ch: 'c' }, { css: "color: blueLine" })
     // doc.setBookmark({ line: 3, ch: 'a' })
     // doc.addLineClass(10, "where", "blue")
     // splitted = instructions.map((ins) => {
@@ -345,7 +346,7 @@ submit.onclick = () => {
     console.log(arrayAddresses)
 
     for (let i = 0; i < splitted.length; i++) {
-        doc.addLineClass((i + 1), "background", "blue")
+        //doc.addLineClass((i + 1), "background", "blueLine")
 
         console.log(registers.get("s3"))
         console.log(splitted[i])
@@ -369,7 +370,7 @@ submit.onclick = () => {
             sll(splitted[i])
         //sll
         console.log(registers)
-        doc.removeLineClass((i + 1), "background", "blue")
+        //doc.removeLineClass((i + 1), "background", "blueLine")
     }
 
 }
@@ -382,6 +383,7 @@ let splitted_next = []
 let doc = ''
 let oldLineValue = 0
 next.onclick = () => {
+
     if (lineValue == 0) {
         console.log(registers)
         memoryIndex = 0
@@ -443,10 +445,11 @@ next.onclick = () => {
 
     //console.log(arrayAddresses_next)
 
+
     if (lineValue < splitted_next.length) {
         console.log(doc)
-        doc.removeLineClass((oldLineValue), "background", "blue")
-        doc.addLineClass((lineValue + 1), "background", "blue")
+        doc.removeLineClass((oldLineValue), "background", "blueLine")
+        doc.addLineClass((lineValue + 1), "background", "blueLine")
         oldLineValue = lineValue + 1
         lineValue += 1
         //console.log(registers.get("s3"))
