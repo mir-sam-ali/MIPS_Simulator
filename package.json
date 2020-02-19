@@ -1,0 +1,23 @@
+{
+  "name": "qtspim",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "codemirror": "^5.51.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mir-sam-ali/MIPS_Simulator.git"
+  },
+  "author": "Mir Sameed Ali",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mir-sam-ali/MIPS_Simulator/issues"
+  },
+  "homepage": "https://github.com/mir-sam-ali/MIPS_Simulator#readme"
+}

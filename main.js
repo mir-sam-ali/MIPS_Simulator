@@ -1,4 +1,5 @@
 
+//import './main.css'
 //console.log((x >>> 0).toString(2))
 
 
@@ -13,24 +14,55 @@
 
 
 
-
 var textArea = document.getElementById("ide")
 var submit = document.getElementById("submit")
 var memory = []
 var instructions = []
 var wordAddresses = []
-var PC = 0
-// var myCodeMirror = CodeMirror.fromTextArea(textArea, {
-//     value: "Enter Code Here"
-// });
 
+var myCodeMirror = CodeMirror.fromTextArea(textArea, {
+    value: "Enter Code Here",
+    lineNumbers: true,
+    theme: "blackboard"
 
+});
 for (let i = 0; (i < 1024 * 8); i++) {
     memory.push(0);
 }
-console.log(memory)
+// console.log(memory)
 
-//memory[27] = 32
+
+
+//Code For Uploading a file
+document.getElementById('input_file')
+    .addEventListener('change', getFile)
+
+function getFile(event) {
+    const input = event.target
+    if ('files' in input && input.files.length > 0) {
+        placeFileContent(
+            input.files[0])
+    }
+}
+
+function placeFileContent(file) {
+    readFileContent(file).then(content => {
+        myCodeMirror.setValue(content)
+    }).catch(error => console.log(error))
+}
+
+function readFileContent(file) {
+    const reader = new FileReader()
+    return new Promise((resolve, reject) => {
+        reader.onload = event => resolve(event.target.result)
+        reader.onerror = error => reject(error)
+        reader.readAsText(file)
+    })
+}
+
+//===============================================================
+
+
 var registers = new Map(
     [
         ["r0", 0],
@@ -250,11 +282,23 @@ function displayMemory(memoryIndex) {
 submit.onclick = () => {
     console.log(registers)
     memoryIndex = 0
-    instructions = textArea.value.split(/\r?\n/)
-    splitted = instructions.map((ins) => {
-        ins = ins.trim()
-        return ins.split(/[ ,.]+/)
+    //instructions = myCodeMirror.getDoc().children[0].lines
+    console.log(myCodeMirror.getDoc())
+    splitted = []
+    let doc = myCodeMirror.getDoc()
+    myCodeMirror.getDoc().children.forEach((child) => {
+        child.lines.forEach((ins) => {
+            ins = ins.text.trim()
+            splitted.push(ins.split(/[ ,.]+/))
+        })
     })
+    // doc.markText({ line: 2, ch: 'a' }, { line: 3, ch: 'c' }, { css: "color: blue" })
+    // doc.setBookmark({ line: 3, ch: 'a' })
+    // doc.addLineClass(10, "where", "blue")
+    // splitted = instructions.map((ins) => {
+    //     ins = ins.text.trim()
+    //     return ins.split(/[ ,.]+/)
+    // })
     let jumpPositions = new Map()
     console.log(splitted)
 
@@ -301,6 +345,8 @@ submit.onclick = () => {
     console.log(arrayAddresses)
 
     for (let i = 0; i < splitted.length; i++) {
+        doc.addLineClass((i + 1), "background", "blue")
+
         console.log(registers.get("s3"))
         console.log(splitted[i])
         if (splitted[i][0] == "add")
@@ -323,6 +369,7 @@ submit.onclick = () => {
             sll(splitted[i])
         //sll
         console.log(registers)
+        doc.removeLineClass((i + 1), "background", "blue")
     }
 
 }
@@ -331,39 +378,45 @@ submit.onclick = () => {
 let jumpPositions_Next = new Map()
 let arrayAddresses_next = new Map();//even for strings
 let lineValue = 0;
-let splitted = []
-
+let splitted_next = []
+let doc = ''
+let oldLineValue = 0
 next.onclick = () => {
     if (lineValue == 0) {
         console.log(registers)
         memoryIndex = 0
-        //console.log(myCodeMirror.getDoc())
-        instructions = textArea.value.split(/\r?\n/)
-        splitted = instructions.map((ins) => {
-            ins = ins.trim()
-            return ins.split(/[ ,.]+/)
+        //console.log(myCodeMirror.getDoc().children[0].lines)
+        //instructions = textArea.value.split(/\r?\n/)
+        doc = myCodeMirror.getDoc()
+
+        instructions = myCodeMirror.getDoc().children[0].lines
+        myCodeMirror.getDoc().children.forEach((child) => {
+            child.lines.forEach((ins) => {
+                ins = ins.text.trim()
+                splitted_next.push(ins.split(/[ ,.]+/))
+            })
         })
 
-        console.log(splitted)
+        console.log(splitted_next)
 
-        for (let j = 0; j < splitted.length; j++) {
-            if (splitted[j][0][(splitted[j][0].length) - 1] == ':') {
-                jumpPositions_Next.set((splitted[j][0].slice(0, splitted[j][0].length - 1)), j)
+        for (let j = 0; j < splitted_next.length; j++) {
+            if (splitted_next[j][0][(splitted_next[j][0].length) - 1] == ':') {
+                jumpPositions_Next.set((splitted_next[j][0].slice(0, splitted_next[j][0].length - 1)), j)
             }
         }
         // console.log(jumpPositions_Next)
         for (let i = 1; i > 0; i++) {
-            if (splitted[i][1] == "text") {
+            if (splitted_next[i][1] == "text") {
                 lineValue = i
                 break;
             }
-            else if (splitted[i][1] == "word") {
-                if (splitted[i].length != 3)
-                    arrayAddresses_next.set(splitted[i - 1][0].split(":")[0], memoryIndex)
-                for (let j = 2; j < splitted[i].length; j++) {
-                    // memory[memoryIndex - 1] = parseInt(splitted[i][j])
+            else if (splitted_next[i][1] == "word") {
+                if (splitted_next[i].length != 3)
+                    arrayAddresses_next.set(splitted_next[i - 1][0].split(":")[0], memoryIndex)
+                for (let j = 2; j < splitted_next[i].length; j++) {
+                    // memory[memoryIndex - 1] = parseInt(splitted_next[i][j])
                     // memoryIndex += 1
-                    let numberToBeStored = parseInt(splitted[i][j])
+                    let numberToBeStored = parseInt(splitted_next[i][j])
                     let BinaryEquivalent = (numberToBeStored >>> 0).toString(2)
 
                     let initialLength = BinaryEquivalent.length
@@ -390,29 +443,33 @@ next.onclick = () => {
 
     //console.log(arrayAddresses_next)
 
-    if (lineValue < splitted.length) {
-        console.log(registers.get("s3"))
-        console.log(splitted[lineValue])
-        if (splitted[lineValue][0] == "add")
-            add(splitted[lineValue])
-        else if (splitted[lineValue][0] == "sub")
-            sub(splitted[lineValue])
-        else if (splitted[lineValue][0] == "lw")
-            lw(splitted[lineValue])
-        else if (splitted[lineValue][0] == "sw")
-            sw(splitted[lineValue], memoryIndex)
-        else if (splitted[lineValue][0] == "beq")
-            lineValue = beq(splitted[lineValue], lineValue, jumpPositions_Next)
-        else if (splitted[lineValue][0] == "j")
-            lineValue = jump(splitted[lineValue], jumpPositions_Next)
-        else if (splitted[lineValue][0] == "addi")
-            addi(splitted[lineValue])
-        else if (splitted[lineValue][0] == "slt")
-            slt(splitted[lineValue])
-        else if (splitted[lineValue][0] == "sll")
-            sll(splitted[lineValue])
-        //sll
+    if (lineValue < splitted_next.length) {
+        console.log(doc)
+        doc.removeLineClass((oldLineValue), "background", "blue")
+        doc.addLineClass((lineValue + 1), "background", "blue")
+        oldLineValue = lineValue + 1
         lineValue += 1
+        //console.log(registers.get("s3"))
+        console.log(splitted_next[lineValue])
+        if (splitted_next[lineValue][0] == "add")
+            add(splitted_next[lineValue])
+        else if (splitted_next[lineValue][0] == "sub")
+            sub(splitted_next[lineValue])
+        else if (splitted_next[lineValue][0] == "lw")
+            lw(splitted_next[lineValue])
+        else if (splitted_next[lineValue][0] == "sw")
+            sw(splitted_next[lineValue], memoryIndex)
+        else if (splitted_next[lineValue][0] == "beq")
+            lineValue = beq(splitted_next[lineValue], lineValue, jumpPositions_Next)
+        else if (splitted_next[lineValue][0] == "j")
+            lineValue = jump(splitted_next[lineValue], jumpPositions_Next)
+        else if (splitted_next[lineValue][0] == "addi")
+            addi(splitted_next[lineValue])
+        else if (splitted_next[lineValue][0] == "slt")
+            slt(splitted_next[lineValue])
+        else if (splitted_next[lineValue][0] == "sll")
+            sll(splitted_next[lineValue])
+        //sll
         console.log(registers)
     }
 }
