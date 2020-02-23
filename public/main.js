@@ -19,11 +19,13 @@ var submit = document.getElementById("submit")
 var memory = []
 var instructions = []
 var wordAddresses = []
+let nextButtonClicked = false
+
 
 var myCodeMirror = CodeMirror.fromTextArea(textArea, {
     value: "Enter Code Here",
     lineNumbers: true,
-    theme: "blackboard"
+    theme: "blackboard",
 
 });
 for (let i = 0; (i < 1024 * 8); i++) {
@@ -244,7 +246,10 @@ function sw(ins, memoryIndex) {
     memory[finalAddress + 1] = BinaryEquivalent.slice(16, 24)
     memory[finalAddress + 2] = BinaryEquivalent.slice(24, 32)
     console.log(memory)
-    wordAddresses.push(finalAddress - 1)
+    if (finalAddress >= memoryIndex) {
+        wordAddresses.push(finalAddress)
+        console.log(finalAddress)
+    }
     displayMemory(memoryIndex)//I have to change this
     //displayRegisters()
     // let r1 = ins[2][1] + ins[2][2]
@@ -271,113 +276,115 @@ function displayMemory(memoryIndex) {
     console.log(memoryIndex)
     let memDiv = document.querySelector(".memoryDiv")
     memDiv.innerHTML = ""
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < memoryIndex; i += 4) {
         let span = document.createElement('span')
         span.classList.add("item")
-        span.innerText = "\n[0x" + (i + 1).toString(16) + "]: " + memory[i] + "  "
+        span.innerText = "\n[0x" + (i + 1).toString(16) + "]: " + memory[i] + " " + memory[i + 1] + " " + memory[i + 2] + " " + memory[i + 3] + "  "
         memDiv.appendChild(span)
     }
-    // for (let i = 0; i < wordAddresses.length; i++) {
-    //     let span = document.createElement('span')
-    //     span.innerText = "\n[0x" + (wordAddresses[i] + 1).toString(16) + "]: " + memory[wordAddresses[i]] + "  " + memory[wordAddresses[i] + 1] + " " + memory[wordAddresses[i] + 2] + " " + memory[wordAddresses[i] + 3] + " "
-    //     memDiv.appendChild(span)
-    // }
+    console.log(wordAddresses)
+    for (let i = 0; i < wordAddresses.length; i++) {
+
+        let span = document.createElement('span')
+        span.classList.add("item")
+        span.innerText = "\n[0x" + (wordAddresses[i]).toString(16) + "]: " + memory[wordAddresses[i] - 1] + "  " + memory[wordAddresses[i]] + " " + memory[wordAddresses[i] + 1] + " " + memory[wordAddresses[i] + 2] + " "
+        memDiv.appendChild(span)
+    }
+
 }
 
 submit.onclick = () => {
-    console.log(registers)
-    memoryIndex = 0
-    //instructions = myCodeMirror.getDoc().children[0].lines
-    console.log(myCodeMirror.getDoc())
-    splitted = []
-    let doc = myCodeMirror.getDoc()
-    myCodeMirror.getDoc().children.forEach((child) => {
-        child.lines.forEach((ins) => {
-            ins = ins.text.trim()
-            splitted.push(ins.split(/[ ,.]+/))
+    if (!nextButtonClicked) {
+
+        memoryIndex = 0
+
+        splitted = []
+
+
+        myCodeMirror.getDoc().children.forEach((child) => {
+            child.lines.forEach((ins) => {
+                ins = ins.text.trim()
+                splitted.push(ins.split(/[ ,.]+/))
+            })
         })
-    })
-    // doc.markText({ line: 2, ch: 'a' }, { line: 3, ch: 'c' }, { css: "color: blueLine" })
-    // doc.setBookmark({ line: 3, ch: 'a' })
-    // doc.addLineClass(10, "where", "blue")
-    // splitted = instructions.map((ins) => {
-    //     ins = ins.text.trim()
-    //     return ins.split(/[ ,.]+/)
-    // })
-    let jumpPositions = new Map()
-    console.log(splitted)
 
-    for (let j = 0; j < splitted.length; j++) {
-        if (splitted[j][0][(splitted[j][0].length) - 1] == ':') {
-            jumpPositions.set((splitted[j][0].slice(0, splitted[j][0].length - 1)), j)
+        let jumpPositions = new Map()
+        console.log(splitted)
+
+        for (let j = 0; j < splitted.length; j++) {
+            if (splitted[j][0][(splitted[j][0].length) - 1] == ':') {
+                jumpPositions.set((splitted[j][0].slice(0, splitted[j][0].length - 1)), j)
+            }
         }
-    }
-    console.log(jumpPositions)
+        console.log(jumpPositions)
 
-    let arrayAddresses = new Map();//even for strings
+        let arrayAddresses = new Map();//even for strings
 
 
-    for (let i = 1; i > 0; i++) {
-        if (splitted[i][1] == "text")
-            break;
-        else if (splitted[i][1] == "word") {
-            if (splitted[i].length != 3)
-                arrayAddresses.set(splitted[i - 1][0].split(":")[0], memoryIndex)
-            for (let j = 2; j < splitted[i].length; j++) {
-                // memory[memoryIndex - 1] = parseInt(splitted[i][j])
-                // memoryIndex += 1
-                let numberToBeStored = parseInt(splitted[i][j])
-                let BinaryEquivalent = (numberToBeStored >>> 0).toString(2)
+        for (let i = 1; i > 0; i++) {
+            if (splitted[i][1] == "text")
+                break;
+            else if (splitted[i][1] == "word") {
+                if (splitted[i].length != 3)
+                    arrayAddresses.set(splitted[i - 1][0].split(":")[0], memoryIndex)
+                for (let j = 2; j < splitted[i].length; j++) {
+                    let numberToBeStored = parseInt(splitted[i][j])
+                    let BinaryEquivalent = (numberToBeStored >>> 0).toString(2)
 
-                let initialLength = BinaryEquivalent.length
-                for (let j = 0; j < (32 - initialLength); j += 1) {
-                    BinaryEquivalent = "0" + BinaryEquivalent;
+                    let initialLength = BinaryEquivalent.length
+                    for (let j = 0; j < (32 - initialLength); j += 1) {
+                        BinaryEquivalent = "0" + BinaryEquivalent;
+                    }
+
+                    memory[memoryIndex] = BinaryEquivalent.slice(0, 8)
+                    memory[memoryIndex + 1] = BinaryEquivalent.slice(8, 16)
+                    memory[memoryIndex + 2] = BinaryEquivalent.slice(16, 24)
+                    memory[memoryIndex + 3] = BinaryEquivalent.slice(24, 32)
+                    memoryIndex += 4;
                 }
-
-                memory[memoryIndex] = BinaryEquivalent.slice(0, 8)
-                memory[memoryIndex + 1] = BinaryEquivalent.slice(8, 16)
-                memory[memoryIndex + 2] = BinaryEquivalent.slice(16, 24)
-                memory[memoryIndex + 3] = BinaryEquivalent.slice(24, 32)
-                memoryIndex += 4;
             }
 
-            console.log(memory)
         }
 
+        displayMemory(memoryIndex)
+
+
+
+        for (let i = 0; i < splitted.length; i++) {
+            console.log(registers.get("s3"))
+            console.log(splitted[i])
+            if (splitted[i][0] == "add")
+                add(splitted[i])
+            else if (splitted[i][0] == "sub")
+                sub(splitted[i])
+            else if (splitted[i][0] == "lw")
+                lw(splitted[i])
+            else if (splitted[i][0] == "sw")
+                sw(splitted[i], memoryIndex)
+            else if (splitted[i][0] == "beq")
+                i = beq(splitted[i], i, jumpPositions)
+            else if (splitted[i][0] == "j")
+                i = jump(splitted[i], jumpPositions)
+            else if (splitted[i][0] == "addi")
+                addi(splitted[i])
+            else if (splitted[i][0] == "slt")
+                slt(splitted[i])
+            else if (splitted[i][0] == "sll")
+                sll(splitted[i])
+
+
+        }
+    } else {
+        while (lineValue < splitted_next.length)
+            nextOnClick();
+
     }
 
-    displayMemory(memoryIndex)
-    console.log(arrayAddresses)
-
-    for (let i = 0; i < splitted.length; i++) {
-        //doc.addLineClass((i + 1), "background", "blueLine")
-
-        console.log(registers.get("s3"))
-        console.log(splitted[i])
-        if (splitted[i][0] == "add")
-            add(splitted[i])
-        else if (splitted[i][0] == "sub")
-            sub(splitted[i])
-        else if (splitted[i][0] == "lw")
-            lw(splitted[i])
-        else if (splitted[i][0] == "sw")
-            sw(splitted[i], memoryIndex)
-        else if (splitted[i][0] == "beq")
-            i = beq(splitted[i], i, jumpPositions)
-        else if (splitted[i][0] == "j")
-            i = jump(splitted[i], jumpPositions)
-        else if (splitted[i][0] == "addi")
-            addi(splitted[i])
-        else if (splitted[i][0] == "slt")
-            slt(splitted[i])
-        else if (splitted[i][0] == "sll")
-            sll(splitted[i])
-        //sll
-        console.log(registers)
-        //doc.removeLineClass((i + 1), "background", "blueLine")
-    }
 
 }
+
+
+
 
 
 let jumpPositions_Next = new Map()
@@ -386,10 +393,14 @@ let lineValue = 0;
 let splitted_next = []
 let doc = ''
 let oldLineValue = 0
-next.onclick = () => {
+next.addEventListener('click', nextOnClick)
+
+function nextOnClick() {
 
     if (lineValue == 0) {
-        console.log(registers)
+
+        nextButtonClicked = true
+
         memoryIndex = 0
         //console.log(myCodeMirror.getDoc().children[0].lines)
         //instructions = textArea.value.split(/\r?\n/)

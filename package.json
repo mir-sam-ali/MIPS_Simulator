@@ -1,10 +1,12 @@
 {
-  "name": "qtspim",
+  "name": "MIPS Simulator",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "app.js",
   "dependencies": {
-    "codemirror": "^5.51.0"
+    "codemirror": "^5.51.0",
+    "ejs": "^3.0.1",
+    "express": "^4.17.1"
   },
   "devDependencies": {},
   "scripts": {
