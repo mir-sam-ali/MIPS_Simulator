@@ -321,7 +321,7 @@ submit.onclick = () => {
         let arrayAddresses = new Map();//even for strings
 
 
-        for (let i = 1; i > 0; i++) {
+        for (let i = 0; i >= 0; i++) {
             if (splitted[i][1] == "text")
                 break;
             else if (splitted[i][1] == "word") {
@@ -422,7 +422,7 @@ function nextOnClick() {
             }
         }
         // console.log(jumpPositions_Next)
-        for (let i = 1; i > 0; i++) {
+        for (let i = 0; i >= 0; i++) {
             if (splitted_next[i][1] == "text") {
                 lineValue = i
                 break;
