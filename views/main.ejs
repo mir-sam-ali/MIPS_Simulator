@@ -1,88 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="/main.css" />
+    <link rel="stylesheet" href="/CodeMirror/lib/codemirror.css" />
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href='/main.css'>
-    <link rel="stylesheet" href="/CodeMirror/lib/codemirror.css">
-
-    <link rel="stylesheet" href='/CodeMirror/theme/blackboard.css'>
-    <link rel="stylesheet" type="text/css" href="/Semantic-UI-CSS-master/semantic.min.css">
+    <link rel="stylesheet" href="/CodeMirror/theme/blackboard.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/Semantic-UI-CSS-master/semantic.min.css"
+    />
 
     <title>MIPS Simulator</title>
-</head>
+  </head>
 
-<body style="background:#100e17;">
-    <div class="ui inverted segment" style="background-color: #17141d; color: white;">
-        <div class="ui inverted secondary pointing menu">
-            <div class="item">
-
-                <h1><i class="microchip icon" style="color:#ff8a00"></i>MIPS Simulator</h1>
-            </div>
+  <body style="background: #100e17;">
+    <div
+      class="ui inverted segment"
+      style="background-color: #17141d; color: white;"
+    >
+      <div class="ui inverted secondary pointing menu">
+        <div class="item">
+          <h1>
+            <i class="microchip icon" style="color: #ff8a00;"></i>MIPS Simulator
+          </h1>
         </div>
+      </div>
     </div>
-    <div class="ui grid ">
-        <div class="four wide column">
-            <div class="ui top attached tabular menu " style="background-color: #17141d; color: white;">
-                <a class="item active" style="background-color: #17141d; color: white;" data-tab="registers">Registers</a>
-                <a class="item" style="background-color: #17141d; color: white;" data-tab="Memory">Memory</a>
-            </div>
-
-            <div class="ui segment bottom tab attached active" data-tab="registers" style="background-color: #17141d; color: white;">
-                <div class="ui inverted relaxed divided list">
-                    <h2 class="ui blue inverted header" style="margin-left: 10px;">Registers</h2>
-                    <div class=" registerDiv">
-                    </div>
-                </div>
-            </div>
-            <div class="ui segment bottom tab attached" data-tab="Memory" style="background-color: #17141d; color: white;">
-                <div class="ui inverted relaxed divided list">
-                    <h2 class="ui blue inverted header" style="margin-left: 10px;">Memory</h2>
-                    <div class="memoryDiv">
-                    </div>
-                </div>
-            </div>
-
-
-
-
-
+    <div class="ui grid">
+      <div class="four wide column">
+        <div
+          class="ui top attached tabular menu"
+          style="background-color: #17141d; color: white;"
+        >
+          <a
+            class="item active"
+            style="background-color: #17141d; color: white;"
+            data-tab="registers"
+            >Registers</a
+          >
+          <a
+            class="item"
+            style="background-color: #17141d; color: white;"
+            data-tab="Memory"
+            >Memory</a
+          >
         </div>
-        <div class="twelve wide column">
-            <textarea name="" id="ide" cols="200" rows="50"></textarea>
-            <div class="ui buttons" style="margin-top:10px;">
-                <button class="ui inverted orange button" id="submit">Run All</button>
-                <div class="ui animated inverted orange button" id="next" tabindex="0">
-                    <div class="visible content">Next</div>
-                    <div class="hidden content">
-                        <i class="right arrow icon"></i>
-                    </div>
-                </div>
-                <!-- <button id="next">Next</button> -->
-                <input type="file" name="file" id="input_file" />
-                <label for="input_file" class="ui inverted orange button">
-                    <i class="upload icon"></i>&nbsp;
-                    Upload File
-                </label>
-            </div>
 
-
-
+        <div
+          class="ui segment bottom tab attached active"
+          data-tab="registers"
+          style="background-color: #17141d; color: white;"
+        >
+          <div class="ui inverted relaxed divided list">
+            <h2 class="ui blue inverted header" style="margin-left: 10px;">
+              Registers
+            </h2>
+            <div class="registerDiv"></div>
+          </div>
         </div>
+        <div
+          class="ui segment bottom tab attached"
+          data-tab="Memory"
+          style="background-color: #17141d; color: white;"
+        >
+          <div class="ui inverted relaxed divided list">
+            <h2 class="ui blue inverted header" style="margin-left: 10px;">
+              Memory
+            </h2>
+            <div class="memoryDiv"></div>
+          </div>
+        </div>
+      </div>
+      <div class="twelve wide column">
+        <textarea name="textarea" id="ide" cols="200" rows="50"></textarea>
+        <div class="ui buttons" style="margin-top: 10px;">
+          <button class="ui inverted orange button" id="submit">Run All</button>
+          <div
+            class="ui animated inverted orange button"
+            id="next"
+            tabindex="0"
+          >
+            <div class="visible content">Next</div>
+            <div class="hidden content">
+              <i class="right arrow icon"></i>
+            </div>
+          </div>
+          <!-- <button id="next">Next</button> -->
+          <input type="file" name="file" id="input_file" />
+          <label for="input_file" class="ui inverted orange button">
+            <i class="upload icon"></i>&nbsp; Upload File
+          </label>
+        </div>
+      </div>
     </div>
     <!-- <div class="registerDiv">
 
     </div> -->
 
-    <script src="https://code.jquery.com/jquery-3.1.1.min.js" integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
-        crossorigin="anonymous"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"
+    ></script>
     <script src="/Semantic-UI-CSS-master/semantic.min.js"></script>
     <script src="/CodeMirror/lib/codemirror.js"></script>
     <script src="/CodeMirror/mode/javascript/javascript.js"></script>
-    <script src="/main.js"></script>
-
-</body>
-
+    <script type="module" src="/pipelined.js"></script>
+  </body>
 </html>
