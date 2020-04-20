@@ -1006,4 +1006,21 @@ submit.onclick = () => {
   console.log("cycles", cycle);
   console.log("Stalls", NumberOfStalls);
   console.log(registers);
+
+  let cyclesDiv = document.getElementById("cycles");
+  let iconEl = document.createElement("i");
+  iconEl.classList.add("sync");
+  iconEl.classList.add("alternate");
+  iconEl.classList.add("icon");
+  iconEl.classList.add("cyclesIcon");
+  cyclesDiv.appendChild(iconEl);
+  cyclesDiv.innerHTML += "Cycles: " + cycle;
+
+  let stallDiv = document.getElementById("stalls");
+  let iconEl2 = document.createElement("i");
+  iconEl2.classList.add("ban");
+  iconEl2.classList.add("icon");
+  iconEl2.classList.add("banIcon");
+  stallDiv.appendChild(iconEl2);
+  stallDiv.innerHTML += "Stalls: " + NumberOfStalls;
 };

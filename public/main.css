@@ -1,26 +1,30 @@
-body{
-    background: #100e17;
+body {
+  background: #100e17;
 }
 
-
-.blueLine{
-    background-color: blue;
+.blueLine {
+  background-color: blue;
 }
 
-.registerDiv{
-    width: 100%;
+.registerDiv {
+  width: 100%;
 }
-#ide{
-display: inline;
-}
-
-.item{
-    
-    margin-left: 10px;
-    border-bottom: 0.5px solid gray;
-    padding-bottom: 2px;
+#ide {
+  display: inline;
 }
 
+.item {
+  margin-left: 10px;
+  border-bottom: 0.5px solid gray;
+  padding-bottom: 2px;
+}
+
+.cyclesIcon {
+  color: #ff8a00;
+}
+.banIcon {
+  color: #f0021e;
+}
 
 /* 
 .inputfile {
@@ -45,7 +49,6 @@ display: inline;
 }
 .inputfile + label {
 	cursor: pointer; /* "hand" cursor */
-
 
 /* 
 
@@ -101,11 +104,6 @@ display: inline;
   }
     */
 
-
-
-
-input[type="file"]{
-    display:none;
-
+input[type="file"] {
+  display: none;
 }
-

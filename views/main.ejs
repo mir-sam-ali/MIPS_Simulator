@@ -23,10 +23,18 @@
       style="background-color: #17141d; color: white;"
     >
       <div class="ui inverted secondary pointing menu">
-        <div class="item">
+        <div>
           <h1>
             <i class="microchip icon" style="color: #ff8a00;"></i>MIPS Simulator
           </h1>
+        </div>
+        <div class="right menu">
+          <div class="item">
+            <h2 id="cycles"></h2>
+          </div>
+          <div class="item">
+            <h2 id="stalls"></h2>
+          </div>
         </div>
       </div>
     </div>
@@ -78,13 +86,12 @@
       <div class="twelve wide column">
         <textarea name="textarea" id="ide" cols="200" rows="50"></textarea>
         <div class="ui buttons" style="margin-top: 10px;">
-          <button class="ui inverted orange button" id="submit">Run All</button>
           <div
             class="ui animated inverted orange button"
-            id="next"
+            id="submit"
             tabindex="0"
           >
-            <div class="visible content">Next</div>
+            <div class="visible content">Run</div>
             <div class="hidden content">
               <i class="right arrow icon"></i>
             </div>
