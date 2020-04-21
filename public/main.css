@@ -25,6 +25,11 @@ body {
 .banIcon {
   color: #f0021e;
 }
+.timeline {
+  overflow-x: scroll;
+  width: auto;
+  white-space: nowrap;
+}
 
 /* 
 .inputfile {

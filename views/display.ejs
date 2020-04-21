@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="/main.css" />
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/Semantic-UI-CSS-master/semantic.min.css"
+    />
+
+    <title>MIPS Simulator</title>
+  </head>
+
+  <body style="background: #100e17;">
+    <div
+      class="ui inverted segment"
+      style="background-color: #17141d; color: white;"
+    >
+      <div class="ui inverted secondary pointing menu">
+        <div>
+          <h1>
+            <i class="microchip icon" style="color: #ff8a00;"></i>MIPS Simulator
+          </h1>
+        </div>
+        <div class="right menu">
+          <div class="item">
+            <h2 id="cycles">
+              <i class="sync alternate icon cyclesIcon"></i> Cycles:
+              <%=data.cycles%>
+            </h2>
+          </div>
+          <div class="item">
+            <h2 id="stalls">
+              <i class="ban icon banIcon"></i> Stalls: <%=data.stalls%>
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="timeline">
+
+    
+
+    <table class="ui inverted celled orange table">
+      <thead>
+        <tr>
+          <td>Ins</td>
+          <%for(let i=0;i<data.cycles;i++){%>
+            <td><%=(i+1)%></td>
+          <%} %>
+        </tr>
+      </thead>
+      <tbody>
+        <% let finalCycleData=JSON.parse(data.cycle_data);
+    console.log(finalCycleData);
+    console.log("hello");
+    let timelineData=[];
+    let instructionsExecuted=[]
+    for(let i=0;i<data.numberOfInstructions;i++){
+      let currentCycle=0;
+      console.log(i);
+      let currentInstructionData=[];
+      for(let j=0;j<i;j++){
+        currentInstructionData.push("");
+      }
+      console.log(finalCycleData[0][0])
+      let currentStage=finalCycleData[0][0].stage;
+      let currentInstruction=finalCycleData[0][0].instruction;
+      
+      currentCycle++;
+      
+      if(finalCycleData[0].length==1){
+        (finalCycleData[0]).shift();
+        finalCycleData.shift();
+        currentCycle--;
+      }else{
+        (finalCycleData[0]).shift();
+      }
+      
+      console.log(currentStage);
+      if(currentStage=="STL" && currentInstruction[0]=="beq" && finalCycleData[currentCycle][0].stage=="IF" && finalCycleData[currentCycle][0].instruction!="beq"){
+        currentInstructionData.push(currentStage);
+        currentInstructionData.push(currentStage);
+        currentStage=finalCycleData[currentCycle][0].stage;
+        currentInstruction=finalCycleData[currentCycle][0].instruction;
+      (finalCycleData[currentCycle]).shift();
+      if(finalCycleData[currentCycle].length==0){
+        finalCycleData.shift();
+        if(currentCycle!=0){
+          currentCycle--;
+        }
+      }else{
+        currentCycle++;
+      }
+      }
+
+      if(currentInstruction[0]!="beq" && currentInstruction[0]!="j")
+     { while(currentStage!="WB"){
+        currentInstructionData.push(currentStage);
+        currentStage=finalCycleData[currentCycle][0].stage;
+        currentInstruction=finalCycleData[currentCycle][0].instruction;
+      (finalCycleData[currentCycle]).shift();
+      if(finalCycleData[currentCycle].length==0){
+        finalCycleData.shift();
+        if(currentCycle!=0){
+          currentCycle--;
+        }
+      }else{
+        currentCycle++;
+      }
+
+      }
+      currentInstructionData.push("WB");
+    }
+      else{
+        while(currentStage!="ID/RF"){
+        currentInstructionData.push(currentStage);
+        currentStage=finalCycleData[currentCycle][0].stage;
+        currentInstruction=finalCycleData[currentCycle][0].instruction;
+      (finalCycleData[currentCycle]).shift();
+      if(finalCycleData[currentCycle].length==0){
+        finalCycleData.shift();
+        if(currentCycle!=0){
+          currentCycle--;
+        }
+      }else{
+        currentCycle++;
+      }
+
+      }
+      currentInstructionData.push("ID/RF");
+      }
+
+      
+%>
+<tr>
+  <td><%=currentInstruction.join(" ")%></td>
+  <%
+  currentInstructionData.forEach((el)=>{%>
+    <td><%=el%></td>
+  <%
+  })
+  %>
+</tr>
+
+    <%
+
+
+      timelineData.push(currentInstructionData);
+      instructionsExecuted.push(currentInstruction);
+    }
+    console.log(timelineData);
+    console.log(instructionsExecuted);
+     %>
+      </tbody>
+    </table>
+  </div>
+    <script
+      src="https://code.jquery.com/jquery-3.1.1.min.js"
+      integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+      crossorigin="anonymous"
+    ></script>
+    <script src="/Semantic-UI-CSS-master/semantic.min.js"></script>
+  </body>
+</html>

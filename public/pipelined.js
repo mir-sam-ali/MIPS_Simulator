@@ -1,11 +1,11 @@
 /*#TODO 
-[ ] Fix all the bugs
+[X] Fix all the bugs
 [X] Make sure that ID/RF isBeingWritten is set to true after operands isDirty is set
 [X] Think about other ways of data forwarding i.e. from WB,ID/RF,etc.
 [X] RAW in branch cases
 [X] Check for three ins in RAW
-[ ] check for lw and sw data hazards
-[ ] If possible add graphics showing the cycle data.
+[X] check for lw and sw data hazards
+[ ] add graphics showing the cycle data.
 
 */
 
@@ -15,6 +15,7 @@ var memory = [];
 var instructions = [];
 var wordAddresses = [];
 let nextButtonClicked = false;
+let timelineButton = document.getElementById("timeline");
 
 var myCodeMirror = CodeMirror.fromTextArea(textArea, {
   value: "Enter Code Here",
@@ -127,6 +128,10 @@ let WB_UNIT = {
 // let ALU_UNIT = [];
 // let temp_MEM_UNIT = []; //memoryWrite writes the result to this array. At the end of each cycle we add this result to ALU_UNIT. This prevents memory writes to the ALU_UNIT during the same cycle.
 
+timelineButton.onclick = () => {
+  let submitButton = document.getElementById("cycleDataSubmit");
+  submitButton.click();
+};
 function unlockUnits() {
   IF_UNIT.locked = false;
   ID_UNIT.locked = false;
@@ -801,38 +806,32 @@ submit.onclick = () => {
   }
 
   displayMemory(memoryIndex);
-  let pppp = [...memory];
-  console.log(memory);
 
   let nextInstructionIndex = jumpPositions.get("main");
   let InstructionQueue = [];
   let cycle = 0;
   let NumberOfStalls = 0;
+  let TotalInstructionsExecuted = 0;
 
   let temp = new Job();
   temp.currentStage = 0;
-  //temp.functionTobeCalled=()=>{InstructionFetch(nextInstructionIndex,splitted)};
   temp.instruction = splitted[nextInstructionIndex];
-  //console.log("Temp", temp);
   InstructionQueue.push(temp);
+  let cycleData = [];
 
   while (InstructionQueue.length != 0) {
+    let jobsDoneInCurrentCycle = [];
     let resultFromEx = null;
     let resultFromMem = null;
     let resultFromWb = null;
 
     cycle++;
-
-    //let fetchNewInstruction = true;
-
-    //console.log(cycle, InstructionQueue);
     let currentJobs = InstructionQueue.length;
     let stall = false;
-    //console.log("Current Jobs", currentJobs);
+
     for (let i = 0; i < currentJobs; i++) {
       let currentJob = InstructionQueue[0];
       if (!stall) {
-        //console.log(currentJob);
         switch (currentJob.currentStage) {
           case 0: {
             console.log("IF");
@@ -843,6 +842,13 @@ submit.onclick = () => {
                 nextInstructionIndex,
                 splitted
               );
+
+              let jobData = {
+                stage: "IF",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
+
               nextInstructionIndex++;
               IF_UNIT.latch = currentJob.instruction;
               currentJob.currentStage++;
@@ -850,6 +856,11 @@ submit.onclick = () => {
               InstructionQueue.push(currentJob);
             } else {
               stall = true;
+              let jobData = {
+                stage: "STL",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
               InstructionQueue.shift();
               InstructionQueue.push(currentJob);
             }
@@ -861,22 +872,49 @@ submit.onclick = () => {
               ID_UNIT.locked = true;
               let newPC = InstructionDecode(jumpPositions);
               console.log("ID Return value ", newPC);
-              if (newPC) {
+              if (newPC != null) {
                 if (newPC === "stall") {
                   stall = true;
+
                   //InstructionQueue.shift();
                   InstructionQueue.push(currentJob);
                 } else if (newPC != -1) {
+                  console.log("I was here");
+
                   nextInstructionIndex = newPC;
+                  //for beq and jump
+                }
+                if (!stall) {
+                  let jobData = {
+                    stage: "ID/RF",
+                    instruction: currentJob.instruction,
+                  };
+                  jobsDoneInCurrentCycle.push(jobData);
+                  TotalInstructionsExecuted++;
                 }
                 stall = true;
+                let jobData = {
+                  stage: "STL",
+                  instruction: currentJob.instruction,
+                };
+                jobsDoneInCurrentCycle.push(jobData);
               } else {
+                let jobData = {
+                  stage: "ID/RF",
+                  instruction: currentJob.instruction,
+                };
+                jobsDoneInCurrentCycle.push(jobData);
                 currentJob.currentStage++;
                 InstructionQueue.push(currentJob);
               }
               InstructionQueue.shift(); //removes the first element in the array
             } else {
               stall = true;
+              let jobData = {
+                stage: "STL",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
               InstructionQueue.shift();
               InstructionQueue.push(currentJob);
             }
@@ -893,17 +931,32 @@ submit.onclick = () => {
               let returnVal = Execute(cycle);
               if (returnVal === "stall") {
                 stall = true;
+                let jobData = {
+                  stage: "STL",
+                  instruction: currentJob.instruction,
+                };
+                jobsDoneInCurrentCycle.push(jobData);
                 InstructionQueue.shift();
                 InstructionQueue.push(currentJob);
               } else {
                 if (returnVal) {
                   resultFromEx = returnVal;
                 }
+                let jobData = {
+                  stage: "EX",
+                  instruction: currentJob.instruction,
+                };
+                jobsDoneInCurrentCycle.push(jobData);
                 currentJob.currentStage++;
                 InstructionQueue.push(currentJob);
                 InstructionQueue.shift(); //removes the first element in the array
               }
             } else {
+              let jobData = {
+                stage: "STL",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
               stall = true;
               InstructionQueue.shift();
               InstructionQueue.push(currentJob);
@@ -921,9 +974,19 @@ submit.onclick = () => {
               let returnVal = MemoryWrite(memoryIndex, cycle);
               if (returnVal === "stall") {
                 stall = true;
+                let jobData = {
+                  stage: "STL",
+                  instruction: currentJob.instruction,
+                };
+                jobsDoneInCurrentCycle.push(jobData);
                 InstructionQueue.shift();
                 InstructionQueue.push(currentJob);
               } else {
+                let jobData = {
+                  stage: "MEM",
+                  instruction: currentJob.instruction,
+                };
+                jobsDoneInCurrentCycle.push(jobData);
                 if (returnVal) {
                   resultFromMem = returnVal;
                 }
@@ -933,21 +996,37 @@ submit.onclick = () => {
               } //removes the first element in the array}
             } else {
               stall = true;
+              let jobData = {
+                stage: "STL",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
               InstructionQueue.shift();
               InstructionQueue.push(currentJob);
             }
             break;
           }
           case 4: {
-            //MEM
+            //WB
             console.log("WB");
             if (!WB_UNIT.locked) {
               WB_UNIT.locked = true;
               console.log(MEM_UNIT);
+              let jobData = {
+                stage: "WB",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
               resultFromWb = WriteBack(memoryIndex);
               InstructionQueue.shift(); //removes the first element in the array
+              TotalInstructionsExecuted++;
             } else {
               stall = true;
+              let jobData = {
+                stage: "STL",
+                instruction: currentJob.instruction,
+              };
+              jobsDoneInCurrentCycle.push(jobData);
               InstructionQueue.shift();
               InstructionQueue.push(currentJob);
             }
@@ -999,6 +1078,8 @@ submit.onclick = () => {
     unlockUnits();
     rt = [...InstructionQueue];
     console.log("end", rt);
+
+    cycleData.push(jobsDoneInCurrentCycle);
   }
 
   displayMemory(memoryIndex);
@@ -1006,6 +1087,20 @@ submit.onclick = () => {
   console.log("cycles", cycle);
   console.log("Stalls", NumberOfStalls);
   console.log(registers);
+  console.log(cycleData);
+  let cycleDataString = JSON.stringify(cycleData);
+  console.log(TotalInstructionsExecuted);
+
+  let cycleDataInput = document.getElementById("cycle-data");
+  let cycleInput = document.getElementById("numberOfCycles");
+  let stallInput = document.getElementById("numberOfStalls");
+  let instructionLength = document.getElementById("numberOfInstructions");
+
+  cycleDataInput.value = cycleDataString;
+  console.log(cycleDataInput.value);
+  cycleInput.value = cycle;
+  stallInput.value = NumberOfStalls;
+  instructionLength.value = TotalInstructionsExecuted;
 
   let cyclesDiv = document.getElementById("cycles");
   let iconEl = document.createElement("i");
@@ -1023,4 +1118,6 @@ submit.onclick = () => {
   iconEl2.classList.add("banIcon");
   stallDiv.appendChild(iconEl2);
   stallDiv.innerHTML += "Stalls: " + NumberOfStalls;
+
+  timelineButton.style.display = "block";
 };

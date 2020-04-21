@@ -35,6 +35,15 @@
           <div class="item">
             <h2 id="stalls"></h2>
           </div>
+          <div class="item">
+            <button
+              class="ui orange button"
+              id="timeline"
+              style="display: none;"
+            >
+              View Cycle Timeline
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -102,8 +111,37 @@
             <i class="upload icon"></i>&nbsp; Upload File
           </label>
         </div>
+        <table class="ui inverted orange table">
+          <thead>
+            <tr>
+              <th>Food</th>
+              <th>Calories</th>
+              <th>Protein</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Apples</td>
+              <td>200</td>
+              <td>0g</td>
+            </tr>
+            <tr>
+              <td>Orange</td>
+              <td>310</td>
+              <td>0g</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+    <form name="data" action="/run" method="POST" hidden>
+      <input name="cycle_data" id="cycle-data" />
+      <input name="cycles" id="numberOfCycles" />
+      <input name="stalls" id="numberOfStalls" />
+      <input name="numberOfInstructions" id="numberOfInstructions" />
+      <input type="submit" id="cycleDataSubmit" />
+    </form>
+
     <!-- <div class="registerDiv">
 
     </div> -->
