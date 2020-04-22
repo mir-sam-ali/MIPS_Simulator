@@ -48,7 +48,7 @@
     <table class="ui inverted celled orange table">
       <thead>
         <tr>
-          <td>Ins</td>
+          <td>Instruction</td>
           <%for(let i=0;i<data.cycles;i++){%>
             <td><%=(i+1)%></td>
           <%} %>
@@ -60,102 +60,82 @@
     console.log("hello");
     let timelineData=[];
     let instructionsExecuted=[]
-    for(let i=0;i<data.numberOfInstructions;i++){
-      let currentCycle=0;
-      console.log(i);
-      let currentInstructionData=[];
-      for(let j=0;j<i;j++){
-        currentInstructionData.push("");
-      }
-      console.log(finalCycleData[0][0])
-      let currentStage=finalCycleData[0][0].stage;
-      let currentInstruction=finalCycleData[0][0].instruction;
-      
-      currentCycle++;
-      
-      if(finalCycleData[0].length==1){
-        (finalCycleData[0]).shift();
-        finalCycleData.shift();
-        currentCycle--;
-      }else{
-        (finalCycleData[0]).shift();
-      }
-      
-      console.log(currentStage);
-      if(currentStage=="STL" && currentInstruction[0]=="beq" && finalCycleData[currentCycle][0].stage=="IF" && finalCycleData[currentCycle][0].instruction!="beq"){
-        currentInstructionData.push(currentStage);
-        currentInstructionData.push(currentStage);
-        currentStage=finalCycleData[currentCycle][0].stage;
-        currentInstruction=finalCycleData[currentCycle][0].instruction;
-      (finalCycleData[currentCycle]).shift();
-      if(finalCycleData[currentCycle].length==0){
-        finalCycleData.shift();
-        if(currentCycle!=0){
-          currentCycle--;
-        }
-      }else{
-        currentCycle++;
-      }
-      }
 
-      if(currentInstruction[0]!="beq" && currentInstruction[0]!="j")
-     { while(currentStage!="WB"){
-        currentInstructionData.push(currentStage);
-        currentStage=finalCycleData[currentCycle][0].stage;
-        currentInstruction=finalCycleData[currentCycle][0].instruction;
-      (finalCycleData[currentCycle]).shift();
-      if(finalCycleData[currentCycle].length==0){
-        finalCycleData.shift();
-        if(currentCycle!=0){
-          currentCycle--;
-        }
-      }else{
-        currentCycle++;
-      }
+     for(let i=0;i<data.cycles;i++){
+       let currentCycle=[]
+       for(let j=0;j<data.numberOfInstructions;j++){
+         currentCycle.push("");
+       }
+       //console.log(currentCycle);
+       timelineData.push(currentCycle);
+     }
 
+
+
+    //console.log(timelineData);
+    for(let i=0;i<data.cycles;i++){
+      let j=0;
+      for(let k=0;k<(finalCycleData[i]).length;k++){
+        //console.log(finalCycleData[i][k].instruction);
+        console.log(timelineData[i][j])
+        if(timelineData[i][j]=="")
+        {
+          if(finalCycleData[i][k].stage=="IF"){
+            instructionsExecuted.push(finalCycleData[i][k].instruction);
+          }
+
+          timelineData[i][j]=finalCycleData[i][k].stage;
+          if(finalCycleData[i][k].stage=="WB"){
+          for(let r=(i+1);r<data.cycles;r++){
+            timelineData[r][j]=".";
+          }
+        }
+          if(finalCycleData[i][k].stage=="ID/RF" && (((finalCycleData[i][k].instruction)[0]=="beq") || ((finalCycleData[i][k].instruction)[0]=="j"))){
+          for(let r=(i+1);r<data.cycles;r++){
+            timelineData[r][j]=".";
+          }
+        }
+          j++;
+        }else{
+          j++;
+          k--;
+          
+        }
       }
-      currentInstructionData.push("WB");
+      // let found=false;
+      //   finalCycleData[i].forEach((el)=>{
+      //     currentCycle.push(el.stage);
+      //     if(el.stage=="IF"){
+      //       instructionsExecuted.push(el.instruction);
+      //     }
+      //     if(el.stage=="WB"){
+      //       breaks++;
+      //     }
+      //     if(el.stage=="ID/RF"){
+      //       if((el.instruction)[0]=="beq" || (el.instruction)[0]=="j"){
+              
+      //     }
+
+      //   })
     }
-      else{
-        while(currentStage!="ID/RF"){
-        currentInstructionData.push(currentStage);
-        currentStage=finalCycleData[currentCycle][0].stage;
-        currentInstruction=finalCycleData[currentCycle][0].instruction;
-      (finalCycleData[currentCycle]).shift();
-      if(finalCycleData[currentCycle].length==0){
-        finalCycleData.shift();
-        if(currentCycle!=0){
-          currentCycle--;
-        }
-      }else{
-        currentCycle++;
-      }
-
-      }
-      currentInstructionData.push("ID/RF");
-      }
-
-      
-%>
-<tr>
-  <td><%=currentInstruction.join(" ")%></td>
-  <%
-  currentInstructionData.forEach((el)=>{%>
-    <td><%=el%></td>
-  <%
-  })
-  %>
-</tr>
-
-    <%
-
-
-      timelineData.push(currentInstructionData);
-      instructionsExecuted.push(currentInstruction);
-    }
-    console.log(timelineData);
+    //console.log(timelineData);
     console.log(instructionsExecuted);
+
+    for(let i=0;i<data.numberOfInstructions;i++){ %>
+      <tr>
+        <td><%=instructionsExecuted[i].join(" ")%></td>
+        <% for(let j=0;j<data.cycles;j++){%>
+
+          <td><%=timelineData[j][i]%></td>
+          <%
+        }
+        %>
+      </tr>
+<%
+    }
+
      %>
+
       </tbody>
     </table>
   </div>
