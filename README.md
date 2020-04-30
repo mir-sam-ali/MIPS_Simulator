@@ -26,7 +26,7 @@ addi $s3,$s3,1
 end:
 addi $s3,$s3,2
 ![Example]("./Example.png")
-<img src="./Example_Image/Example"/>
+<img src="https://github.com/mir-sam-ali/MIPS_Simulator/blob/master/Example.png?raw=true"/>
 
 
 The concerned source code is public/main.js
