@@ -1,11 +1,11 @@
-/*#TODO 
+/*
 [X] Fix all the bugs
 [X] Make sure that ID/RF isBeingWritten is set to true after operands isDirty is set
 [X] Think about other ways of data forwarding i.e. from WB,ID/RF,etc.
 [X] RAW in branch cases
 [X] Check for three ins in RAW
 [X] check for lw and sw data hazards
-[ ] add graphics showing the cycle data.
+[X] add graphics showing the cycle data.
 
 */
 
