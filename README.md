@@ -26,7 +26,7 @@ addi $s3,$s3,1
 end:
 addi $s3,$s3,2
 
-<img src="https://images.unsplash.com/photo-1588221862647-3ca3b01ed317?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2102&q=80"/>
+<img src="./Example_Image/Example"/>
 
 
 The concerned source code is public/main.js
