@@ -25,7 +25,7 @@ beq $s1,$s2,end
 addi $s3,$s3,1
 end:
 addi $s3,$s3,2
-![Example]("./Example_Image/Example")
+![Example]("Example.png")
 <img src="./Example_Image/Example"/>
 
 
