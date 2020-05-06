@@ -60,6 +60,134 @@ function readFileContent(file) {
     reader.readAsText(file);
   });
 }
+/*
+
+  CACHE RELATED CODE
+
+*/
+//configuration
+let CACHE_DATA_L1 = {
+  cacheSize: 2048, //bytes
+  blockSize: 64, //bytes
+  associativity: 4, //number of blocks in one set
+  accessLatency: 2, //cycles
+};
+
+CACHE_DATA_L1.NumberOfSets =
+  CACHE_DATA_L1.cacheSize / CACHE_DATA_L1.associativity;
+CACHE_DATA_L1.offsetBits = Math.log2(CACHE_DATA_L1.blockSize);
+CACHE_DATA_L1.indexBits = Math.log2(CACHE_DATA_L1.NumberOfSets);
+CACHE_DATA_L1.tagBits = 32 - CACHE_DATA_L1.offsetBits - CACHE_DATA_L1.indexBits;
+
+let CACHE_L1 = [];
+for (let i = 0; i < CACHE_DATA_L1.NumberOfSets; i++) {
+  let set = [];
+  for (let j = 0; j < CACHE_DATA_L1.associativity; j++) {
+    let cacheLine = {
+      tag: null,
+      isValid: true,
+      block: [],
+    };
+    for (let k = 0; k < CACHE_DATA_L1.blockSize; k++) {
+      cacheLine.block.push(0);
+    }
+    set.push(cacheLine);
+  }
+  CACHE_L1.push(set);
+}
+console.log("MyCache", CACHE_L1);
+console.log("Tag bits", CACHE_DATA_L1.tagBits);
+console.log("index bits", CACHE_DATA_L1.indexBits);
+console.log("offset bits", CACHE_DATA_L1.offsetBits);
+
+let CACHE_DATA_L2 = {
+  cacheSize: 4096, //bytes
+  blockSize: 64, //bytes
+  associativity: 4, //number of blocks in one set
+  accessLatency: 4, //cycles
+};
+
+CACHE_DATA_L2.NumberOfSets =
+  CACHE_DATA_L2.cacheSize / CACHE_DATA_L2.associativity;
+CACHE_DATA_L2.offsetBits = Math.log2(CACHE_DATA_L2.blockSize);
+CACHE_DATA_L2.indexBits = Math.log2(CACHE_DATA_L2.NumberOfSets);
+CACHE_DATA_L2.tagBits = 32 - CACHE_DATA_L2.offsetBits - CACHE_DATA_L2.indexBits;
+
+let CACHE_L2 = [];
+for (let i = 0; i < CACHE_DATA_L2.NumberOfSets; i++) {
+  let set = [];
+  for (let j = 0; j < CACHE_DATA_L2.associativity; j++) {
+    let cacheLine = {
+      tag: null,
+      isValid: true,
+      block: [],
+    };
+    for (let k = 0; k < CACHE_DATA_L2.blockSize; k++) {
+      cacheLine.block.push(0);
+    }
+    set.push(cacheLine);
+  }
+  CACHE_L2.push(set);
+}
+console.log("MyCache2", CACHE_L2);
+
+let getDataFromCache = (address) => {
+  //address has to be sent as binary
+  memory[16] = 5;
+  let oldLength = address.length;
+  for (let i = 0; i < 32 - oldLength; i++) {
+    address = "0" + address;
+  }
+
+  let tagBitsOfAddress = address.slice(0, CACHE_DATA_L1.tagBits);
+  let tagValue = parseInt(tagBitsOfAddress, 2); //decimal value of tag
+  let indexBitsOfAddress = address.slice(
+    CACHE_DATA_L1.tagBits,
+    CACHE_DATA_L1.indexBits + CACHE_DATA_L1.tagBits
+  );
+  let indexValue = parseInt(indexBitsOfAddress, 2);
+  let offsetBitsOfAddress = address.slice(
+    CACHE_DATA_L1.tagBits + CACHE_DATA_L1.indexBits,
+    address.length
+  );
+  let offsetValue = parseInt(offsetBitsOfAddress, 2);
+  console.log(tagBitsOfAddress, indexBitsOfAddress, offsetBitsOfAddress);
+  // console.log()
+  let respectiveSet = CACHE_L1[indexValue];
+  let found = false;
+  let setIsFull = true;
+  for (let i = 0; i < CACHE_DATA_L1.associativity; i++) {
+    if (respectiveSet[i].tag === null) {
+      setIsFull = false;
+    }
+    if (respectiveSet[i].tag === tagValue) {
+      found = true;
+      console.log("CACHE HIT");
+      return respectiveSet[i].block[offsetValue];
+    }
+  }
+
+  if (!found) {
+    if (setIsFull) {
+      //evict
+    } else {
+      //load
+      for (let j = 0; j < CACHE_DATA_L1.associativity; j++) {
+        if (respectiveSet[j].tag == null) {
+          respectiveSet[j].tag = tagValue;
+          for (let i = 0; i < CACHE_DATA_L1.blockSize; i++) {
+            respectiveSet[j].block[i] = memory[tagValue + i];
+          }
+          return respectiveSet[j].block[offsetValue];
+        }
+      }
+    }
+  }
+};
+
+console.log(getDataFromCache((16).toString(2)));
+console.log(getDataFromCache((17).toString(2)));
+
 //===============================================================
 //isBeingWritten denotes whether the the register is getting written in any other instruction. Is it's true then it's value is of no use.
 var registers = new Map([
@@ -160,11 +288,6 @@ displayRegisters();
 function CheckForwardedData(register) {
   //Data forwarded from EX: HIGH PRIORITY
   if (EX_UNIT.latch.ForwardedData.ExResult) {
-    // console.log(
-    //   "EX RESULT",
-    //   Object.keys(EX_UNIT.latch.ForwardedData.ExResult)[0],
-    //   register
-    // );
     if (Object.keys(EX_UNIT.latch.ForwardedData.ExResult)[0] == register) {
       return EX_UNIT.latch.ForwardedData.ExResult[register];
     }
@@ -228,8 +351,8 @@ function add(data) {
 }
 
 function addi(data, cycle) {
-  console.log("DATA", data);
-  console.log(EX_UNIT.latch.ForwardedData);
+  // console.log("DATA", data);
+  // console.log(EX_UNIT.latch.ForwardedData);
   let operand_1 = data.operand1;
 
   if (operand_1.isDirty) {
@@ -261,7 +384,7 @@ function addi(data, cycle) {
 }
 
 function sll(data) {
-  console.log(EX_UNIT.latch.ForwardedData);
+  //console.log(EX_UNIT.latch.ForwardedData);
   let operand_1 = data.operand1;
   if (operand_1.isDirty) {
     let returnVal = CheckForwardedData(data.r1);
@@ -321,7 +444,7 @@ function sub(data) {
   // displayRegisters();
 }
 function slt(data) {
-  console.log(EX_UNIT.latch.ForwardedData);
+  //console.log(EX_UNIT.latch.ForwardedData);
   let operand_1 = data.operand1;
   let operand_2 = data.operand2;
   //console.log(data);
@@ -329,7 +452,7 @@ function slt(data) {
     let returnVal = CheckForwardedData(data.r1);
     //console.log(returnVal);
     if (returnVal != null) {
-      console.log("No stall");
+      //console.log("No stall");
       operand_1.value = returnVal;
     } else {
       return "stall";
@@ -337,7 +460,7 @@ function slt(data) {
   }
 
   if (operand_2.isDirty) {
-    console.log("Why am i here");
+    //console.log("Why am i here");
     let returnVal = CheckForwardedData(data.r2);
     if (returnVal != null) {
       operand_2.value = returnVal;
@@ -464,7 +587,7 @@ function InstructionDecode(jumpPositions) {
       isDirty: operand1.isBeingWritten,
     };
     registers.set(rd, { value: rdVal, isBeingWritten: true });
-    console.log(operand1, operand1Value);
+    //console.log(operand1, operand1Value);
     ID_UNIT.latch = {
       instructionType,
       rd,
@@ -472,7 +595,7 @@ function InstructionDecode(jumpPositions) {
       immediate,
       operand1: operand1Value,
     };
-    console.log(ID_UNIT.latch);
+    //console.log(ID_UNIT.latch);
     return null;
   }
 
@@ -488,7 +611,7 @@ function InstructionDecode(jumpPositions) {
         isDirty: registers.get(rd).isBeingWritten,
       };
       rdVal = operand1Value;
-      console.log(operand1Value.value);
+      //console.log(operand1Value.value);
     }
     let offsetRegister = instructionToBeDecoded[2].split("("); //["0", "$t1)"]
     let r1 = offsetRegister[1].split(")")[0]; //$t1
@@ -507,8 +630,8 @@ function InstructionDecode(jumpPositions) {
     return null;
   }
   if (instructionType == "j") {
-    console.log("JUMPPP", jumpPositions);
-    console.log(jumpPositions.get(instructionToBeDecoded[1]));
+    // console.log("JUMPPP", jumpPositions);
+    // console.log(jumpPositions.get(instructionToBeDecoded[1]));
     return jumpPositions.get(instructionToBeDecoded[1]);
   }
   if (instructionType == "beq") {
@@ -517,7 +640,7 @@ function InstructionDecode(jumpPositions) {
 
     let r1Value = registers.get(r1);
     let r2Value = registers.get(r2);
-    console.log("From BEQ", EX_UNIT.latch.ForwardedData);
+    //console.log("From BEQ", EX_UNIT.latch.ForwardedData);
     if (r1Value.isBeingWritten) {
       let stall = true;
 
@@ -532,7 +655,7 @@ function InstructionDecode(jumpPositions) {
       if (stall) {
         //still stall is true. Search in MEM
         if (EX_UNIT.latch.ForwardedData.MemResult) {
-          console.log(Object.keys(EX_UNIT.latch.ForwardedData.MemResult));
+          //console.log(Object.keys(EX_UNIT.latch.ForwardedData.MemResult));
           if (Object.keys(EX_UNIT.latch.ForwardedData.MemResult)[0] == r1) {
             r1Value.value = EX_UNIT.latch.ForwardedData.MemResult[r1];
             stall = false;
@@ -568,7 +691,7 @@ function InstructionDecode(jumpPositions) {
       if (stall) {
         //still stall is true. Search in MEM
         if (EX_UNIT.latch.ForwardedData.MemResult) {
-          console.log(Object.keys(EX_UNIT.latch.ForwardedData.MemResult));
+          //console.log(Object.keys(EX_UNIT.latch.ForwardedData.MemResult));
           if (Object.keys(EX_UNIT.latch.ForwardedData.MemResult)[0] == r2) {
             r2Value.value = EX_UNIT.latch.ForwardedData.MemResult[r2];
             stall = false;
@@ -599,9 +722,9 @@ function InstructionDecode(jumpPositions) {
 }
 
 function Execute(cycle) {
-  let currentInstruction = ID_UNIT.latch.instructionToBeDecoded;
-  console.log(ID_UNIT.latch.instructionType);
-  console.log("From Execute", ID_UNIT.latch.operand1);
+  // let currentInstruction = ID_UNIT.latch.instructionToBeDecoded;
+  // console.log(ID_UNIT.latch.instructionType);
+  // console.log("From Execute", ID_UNIT.latch.operand1);
   let returnValue = null;
   if (ID_UNIT.latch.instructionType == "add") {
     returnValue = add(ID_UNIT.latch);
@@ -614,7 +737,7 @@ function Execute(cycle) {
   } else if (ID_UNIT.latch.instructionType == "addi") {
     returnValue = addi(ID_UNIT.latch, cycle);
   } else if (ID_UNIT.latch.instructionType == "slt") {
-    console.log("WEBhbfds");
+    //console.log("WEBhbfds");
     returnValue = slt(ID_UNIT.latch);
   } else if (ID_UNIT.latch.instructionType == "sll") {
     returnValue = sll(ID_UNIT.latch);
@@ -625,19 +748,19 @@ function Execute(cycle) {
 function MemoryWrite(memoryIndex, cycle) {
   if (EX_UNIT.latch.instructionType === "lw") {
     let BinaryEquivalent = "";
-    console.log(EX_UNIT.latch.loadAddress);
+    //console.log(EX_UNIT.latch.loadAddress);
     BinaryEquivalent =
       memory[EX_UNIT.latch.loadAddress] +
       memory[EX_UNIT.latch.loadAddress + 1] +
       memory[EX_UNIT.latch.loadAddress + 2] +
       memory[EX_UNIT.latch.loadAddress + 3];
 
-    console.log(BinaryEquivalent);
+    //console.log(BinaryEquivalent);
     //console.log(parseInt(BinaryEquivalent.slice(1, 32), 2), Math.pow(2 * parseInt(BinaryEquivalent[0]), 31))
     let decimalValue =
       parseInt(BinaryEquivalent.slice(1, 32), 2) -
       Math.pow(2 * parseInt(BinaryEquivalent[0]), 31); // Using 2s complement property
-    console.log(decimalValue);
+    //console.log(decimalValue);
     MEM_UNIT.latch = {
       ...EX_UNIT.latch,
       WriteBackValue: decimalValue,
@@ -660,14 +783,14 @@ function MemoryWrite(memoryIndex, cycle) {
         numberToBeStored.value = returnVal;
       }
     }
-    console.log("STORRIIIIIIIIINGGG", numberToBeStored);
+    //console.log("STORRIIIIIIIIINGGG", numberToBeStored);
     let BinaryEquivalent = (numberToBeStored.value >>> 0).toString(2);
 
     let initialLength = BinaryEquivalent.length;
     for (let j = 0; j < 32 - initialLength; j += 1) {
       BinaryEquivalent = "0" + BinaryEquivalent;
     }
-    console.log("Store Address", EX_UNIT.latch.storeAddress);
+    //console.log("Store Address", EX_UNIT.latch.storeAddress);
     memory[EX_UNIT.latch.storeAddress] = BinaryEquivalent.slice(0, 8);
     memory[EX_UNIT.latch.storeAddress + 1] = BinaryEquivalent.slice(8, 16);
     memory[EX_UNIT.latch.storeAddress + 2] = BinaryEquivalent.slice(16, 24);
@@ -677,8 +800,6 @@ function MemoryWrite(memoryIndex, cycle) {
       wordAddresses.push(EX_UNIT.latch.storeAddress);
       //console.log(EX_UNIT.latch.storeAddress);
     }
-    let sayWhat = [...memory];
-    console.log(sayWhat);
 
     MEM_UNIT.latch = {
       ...EX_UNIT.latch,
@@ -696,7 +817,7 @@ function MemoryWrite(memoryIndex, cycle) {
 }
 
 function WriteBack(memoryIndex) {
-  console.log("MEMUNIT", MEM_UNIT);
+  // console.log("MEMUNIT", MEM_UNIT);
 
   let setValue = {
     value: MEM_UNIT.latch.WriteBackValue,
@@ -705,17 +826,17 @@ function WriteBack(memoryIndex) {
   if (MEM_UNIT.latch.WriteBackValue != null) {
     registers.set(MEM_UNIT.latch.rd, setValue);
   }
-  console.log(
-    MEM_UNIT.latch.rd,
-    registers.get(MEM_UNIT.latch.rd).isBeingWritten
-  );
+  // console.log(
+  //   MEM_UNIT.latch.rd,
+  //   registers.get(MEM_UNIT.latch.rd).isBeingWritten
+  // );
   let result = {};
   result[MEM_UNIT.latch.rd] = MEM_UNIT.latch.WriteBackValue;
   return result;
 }
 
 function displayMemory(memoryIndex) {
-  console.log(memoryIndex);
+  //console.log(memoryIndex);
   let memDiv = document.querySelector(".memoryDiv");
   memDiv.innerHTML = "";
   for (let i = 0; i < memoryIndex; i += 4) {
@@ -735,7 +856,7 @@ function displayMemory(memoryIndex) {
       "  ";
     memDiv.appendChild(span);
   }
-  console.log(wordAddresses);
+  //console.log(wordAddresses);
   for (let i = 0; i < wordAddresses.length; i++) {
     let span = document.createElement("span");
     span.classList.add("item");
@@ -834,9 +955,9 @@ submit.onclick = () => {
       if (!stall) {
         switch (currentJob.currentStage) {
           case 0: {
-            console.log("IF");
+            //console.log("IF");
             if (!IF_UNIT.locked) {
-              console.log("NEW INS FETCHED", splitted[nextInstructionIndex]);
+              //console.log("NEW INS FETCHED", splitted[nextInstructionIndex]);
               IF_UNIT.locked = true;
               currentJob.instruction = InstructionFetch(
                 nextInstructionIndex,
@@ -868,10 +989,10 @@ submit.onclick = () => {
           }
           case 1: {
             if (!ID_UNIT.locked) {
-              console.log("ID");
+              //console.log("ID");
               ID_UNIT.locked = true;
               let newPC = InstructionDecode(jumpPositions);
-              console.log("ID Return value ", newPC);
+              //console.log("ID Return value ", newPC);
               if (newPC != null) {
                 if (newPC === "stall") {
                   stall = true;
@@ -923,8 +1044,8 @@ submit.onclick = () => {
           }
           case 2: {
             //execution
-            console.log(ID_UNIT.latch.operand1);
-            console.log("EX");
+            // console.log(ID_UNIT.latch.operand1);
+            // console.log("EX");
             if (!EX_UNIT.locked) {
               EX_UNIT.locked = true;
 
@@ -967,7 +1088,7 @@ submit.onclick = () => {
 
           case 3: {
             //MEM
-            console.log("MEM");
+            //console.log("MEM");
             if (!MEM_UNIT.locked) {
               MEM_UNIT.locked = true;
 
@@ -1008,7 +1129,7 @@ submit.onclick = () => {
           }
           case 4: {
             //WB
-            console.log("WB");
+            //console.log("WB");
             if (!WB_UNIT.locked) {
               WB_UNIT.locked = true;
               console.log(MEM_UNIT);
@@ -1052,19 +1173,19 @@ submit.onclick = () => {
     }
     console.log(stall);
     let rt = [...InstructionQueue];
-    console.log("Start", rt);
+    //console.log("Start", rt);
     if (stall === true) {
       NumberOfStalls++;
     } else if (stall === false) {
-      console.log(nextInstructionIndex);
-      console.log(cycle);
+      // console.log(nextInstructionIndex);
+      // console.log(cycle);
       //We fetch new instruction only when old instruction was fetched and there's no stall
       if (nextInstructionIndex < splitted.length) {
         //add next instruction only if its available
         let nextInstruction = new Job();
         nextInstruction.currentStage = 0;
         nextInstruction.instruction = splitted[nextInstructionIndex];
-        console.log(nextInstruction);
+        //console.log(nextInstruction);
         InstructionQueue.push(nextInstruction);
       }
     }
@@ -1077,7 +1198,7 @@ submit.onclick = () => {
       EX_UNIT.latch.ForwardedData.WbResult = resultFromWb;
     unlockUnits();
     rt = [...InstructionQueue];
-    console.log("end", rt);
+    //console.log("end", rt);
 
     cycleData.push(jobsDoneInCurrentCycle);
   }
@@ -1086,10 +1207,10 @@ submit.onclick = () => {
   displayRegisters();
   console.log("cycles", cycle);
   console.log("Stalls", NumberOfStalls);
-  console.log(registers);
-  console.log(cycleData);
+  // console.log(registers);
+  // console.log(cycleData);
   let cycleDataString = JSON.stringify(cycleData);
-  console.log(TotalInstructionsExecuted);
+  //console.log(TotalInstructionsExecuted);
 
   let cycleDataInput = document.getElementById("cycle-data");
   let cycleInput = document.getElementById("numberOfCycles");
@@ -1097,7 +1218,7 @@ submit.onclick = () => {
   let instructionLength = document.getElementById("numberOfInstructions");
 
   cycleDataInput.value = cycleDataString;
-  console.log(cycleDataInput.value);
+  //console.log(cycleDataInput.value);
   cycleInput.value = cycle;
   stallInput.value = NumberOfStalls;
   instructionLength.value = TotalInstructionsExecuted;
