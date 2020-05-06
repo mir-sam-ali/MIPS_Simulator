@@ -66,6 +66,19 @@ function readFileContent(file) {
 
 */
 //configuration
+
+class Node {
+  left = null;
+  right = null;
+  block = null;
+  tag = null;
+
+  constructor(block1, tag1) {
+    this.block = block1;
+    this.tag = tag1;
+  }
+}
+
 let CACHE_DATA_L1 = {
   cacheSize: 2048, //bytes
   blockSize: 64, //bytes
@@ -74,25 +87,15 @@ let CACHE_DATA_L1 = {
 };
 
 CACHE_DATA_L1.NumberOfSets =
-  CACHE_DATA_L1.cacheSize / CACHE_DATA_L1.associativity;
+  CACHE_DATA_L1.cacheSize /
+  (CACHE_DATA_L1.associativity * CACHE_DATA_L1.associativity);
 CACHE_DATA_L1.offsetBits = Math.log2(CACHE_DATA_L1.blockSize);
 CACHE_DATA_L1.indexBits = Math.log2(CACHE_DATA_L1.NumberOfSets);
 CACHE_DATA_L1.tagBits = 32 - CACHE_DATA_L1.offsetBits - CACHE_DATA_L1.indexBits;
 
 let CACHE_L1 = [];
 for (let i = 0; i < CACHE_DATA_L1.NumberOfSets; i++) {
-  let set = [];
-  for (let j = 0; j < CACHE_DATA_L1.associativity; j++) {
-    let cacheLine = {
-      tag: null,
-      isValid: true,
-      block: [],
-    };
-    for (let k = 0; k < CACHE_DATA_L1.blockSize; k++) {
-      cacheLine.block.push(0);
-    }
-    set.push(cacheLine);
-  }
+  let set = { cache_line: new Map(), head: null, tail: null };
   CACHE_L1.push(set);
 }
 console.log("MyCache", CACHE_L1);
@@ -108,7 +111,8 @@ let CACHE_DATA_L2 = {
 };
 
 CACHE_DATA_L2.NumberOfSets =
-  CACHE_DATA_L2.cacheSize / CACHE_DATA_L2.associativity;
+  CACHE_DATA_L2.cacheSize /
+  (CACHE_DATA_L2.blockSize * CACHE_DATA_L2.associativity);
 CACHE_DATA_L2.offsetBits = Math.log2(CACHE_DATA_L2.blockSize);
 CACHE_DATA_L2.indexBits = Math.log2(CACHE_DATA_L2.NumberOfSets);
 CACHE_DATA_L2.tagBits = 32 - CACHE_DATA_L2.offsetBits - CACHE_DATA_L2.indexBits;
@@ -131,6 +135,29 @@ for (let i = 0; i < CACHE_DATA_L2.NumberOfSets; i++) {
 }
 console.log("MyCache2", CACHE_L2);
 
+let rearrangeSet = (head, tail, target) => {
+  if (target == tail) {
+    return [head, tail];
+  }
+
+  if (target == head) {
+    target.right.left = target.left;
+    head = target.right;
+    tail.right = target;
+    target.left = tail;
+    tail = target;
+    target.right = null;
+  } else if (target != tail) {
+    target.left.right = target.right;
+    target.right.left = target.left;
+    target.left = tail;
+    tail.right = target;
+    tail = target;
+    target.right = null;
+  }
+  return [head, tail];
+};
+
 let getDataFromCache = (address) => {
   //address has to be sent as binary
   memory[16] = 5;
@@ -152,41 +179,67 @@ let getDataFromCache = (address) => {
   );
   let offsetValue = parseInt(offsetBitsOfAddress, 2);
   console.log(tagBitsOfAddress, indexBitsOfAddress, offsetBitsOfAddress);
-  // console.log()
+
   let respectiveSet = CACHE_L1[indexValue];
-  let found = false;
-  let setIsFull = true;
-  for (let i = 0; i < CACHE_DATA_L1.associativity; i++) {
-    if (respectiveSet[i].tag === null) {
-      setIsFull = false;
-    }
-    if (respectiveSet[i].tag === tagValue) {
-      found = true;
-      console.log("CACHE HIT");
-      return respectiveSet[i].block[offsetValue];
-    }
+
+  if (respectiveSet.cache_line.has(tagValue)) {
+    //CACHE HIT
+    console.log("CACHE HIT");
+    [respectiveSet.head, respectiveSet.tail] = rearrangeSet(
+      respectiveSet.head,
+      respectiveSet.tail,
+      respectiveSet.cache_line.get(tagValue)
+    );
+    return respectiveSet.cache_line.get(tagValue).block[offsetValue];
   }
 
-  if (!found) {
-    if (setIsFull) {
-      //evict
-    } else {
-      //load
-      for (let j = 0; j < CACHE_DATA_L1.associativity; j++) {
-        if (respectiveSet[j].tag == null) {
-          respectiveSet[j].tag = tagValue;
-          for (let i = 0; i < CACHE_DATA_L1.blockSize; i++) {
-            respectiveSet[j].block[i] = memory[tagValue + i];
-          }
-          return respectiveSet[j].block[offsetValue];
-        }
-      }
+  if (respectiveSet.cache_line.size === CACHE_DATA_L1.associativity) {
+    //evict
+    console.log("Eviction");
+    let block = [];
+    for (let i = 0; i < CACHE_DATA_L1.blockSize; i++) {
+      block[i] = memory[tagValue + i];
     }
+    let newNode = new Node(block, tagValue);
+    let nodeToBeDel = respectiveSet.head;
+    respectiveSet.head = respectiveSet.head.right;
+    respectiveSet.head.left = null;
+    respectiveSet.cache_line.delete(nodeToBeDel.tag);
+    newNode.left = respectiveSet.tail;
+    respectiveSet.tail.right = newNode;
+    respectiveSet.tail = newNode;
+    respectiveSet.cache_line.set(tagValue, newNode);
+    return block[offsetValue];
+  } else {
+    //load
+    let block = [];
+    for (let i = 0; i < CACHE_DATA_L1.blockSize; i++) {
+      block[i] = memory[tagValue + i];
+    }
+    //respectiveSet.cache_line.set(tagValue, block);
+
+    if (respectiveSet.head == null) {
+      let newNode = new Node(block, tagValue);
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.head = newNode;
+      respectiveSet.tail = newNode;
+    } else {
+      let newNode = new Node(block, tagValue);
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.tail.right = newNode;
+      newNode.left = respectiveSet.tail;
+      respectiveSet.tail = newNode;
+    }
+    return block[offsetValue];
   }
 };
 
 console.log(getDataFromCache((16).toString(2)));
 console.log(getDataFromCache((17).toString(2)));
+console.log(getDataFromCache((8193).toString(2)));
+console.log(getDataFromCache((8192 * 2).toString(2)));
+console.log(getDataFromCache((8192 * 4).toString(2)));
+console.log(getDataFromCache((8192 * 8).toString(2)));
 
 //===============================================================
 //isBeingWritten denotes whether the the register is getting written in any other instruction. Is it's true then it's value is of no use.
