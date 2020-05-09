@@ -1,11 +1,5 @@
 /*
-[X] Fix all the bugs
-[X] Make sure that ID/RF isBeingWritten is set to true after operands isDirty is set
-[X] Think about other ways of data forwarding i.e. from WB,ID/RF,etc.
-[X] RAW in branch cases
-[X] Check for three ins in RAW
-[X] check for lw and sw data hazards
-[X] add graphics showing the cycle data.
+
 
 */
 
@@ -28,12 +22,13 @@ class Job {
   currentStage = 0;
 }
 
-for (let i = 0; i < 1024 * 8; i++) {
+for (let i = 0; i < 1024 * 10; i++) {
   memory.push(0);
 }
 
 //For changing tabs
 $(".menu .item").tab();
+$("select.dropdown").dropdown();
 
 document.getElementById("input_file").addEventListener("change", getFile);
 //Code For Uploading a file
@@ -72,6 +67,7 @@ class Node {
   right = null;
   block = null;
   tag = null;
+  isDirty = false;
 
   constructor(block1, tag1) {
     this.block = block1;
@@ -83,57 +79,88 @@ let CACHE_DATA_L1 = {
   cacheSize: 2048, //bytes
   blockSize: 64, //bytes
   associativity: 4, //number of blocks in one set
-  accessLatency: 2, //cycles
+  accessLatency: 1, //cycles,
+  memoryAccessTime: 5,
 };
-
-CACHE_DATA_L1.NumberOfSets =
-  CACHE_DATA_L1.cacheSize /
-  (CACHE_DATA_L1.associativity * CACHE_DATA_L1.associativity);
-CACHE_DATA_L1.offsetBits = Math.log2(CACHE_DATA_L1.blockSize);
-CACHE_DATA_L1.indexBits = Math.log2(CACHE_DATA_L1.NumberOfSets);
-CACHE_DATA_L1.tagBits = 32 - CACHE_DATA_L1.offsetBits - CACHE_DATA_L1.indexBits;
-
-let CACHE_L1 = [];
-for (let i = 0; i < CACHE_DATA_L1.NumberOfSets; i++) {
-  let set = { cache_line: new Map(), head: null, tail: null };
-  CACHE_L1.push(set);
-}
-console.log("MyCache", CACHE_L1);
-console.log("Tag bits", CACHE_DATA_L1.tagBits);
-console.log("index bits", CACHE_DATA_L1.indexBits);
-console.log("offset bits", CACHE_DATA_L1.offsetBits);
-
 let CACHE_DATA_L2 = {
   cacheSize: 4096, //bytes
   blockSize: 64, //bytes
   associativity: 4, //number of blocks in one set
   accessLatency: 4, //cycles
 };
-
-CACHE_DATA_L2.NumberOfSets =
-  CACHE_DATA_L2.cacheSize /
-  (CACHE_DATA_L2.blockSize * CACHE_DATA_L2.associativity);
-CACHE_DATA_L2.offsetBits = Math.log2(CACHE_DATA_L2.blockSize);
-CACHE_DATA_L2.indexBits = Math.log2(CACHE_DATA_L2.NumberOfSets);
-CACHE_DATA_L2.tagBits = 32 - CACHE_DATA_L2.offsetBits - CACHE_DATA_L2.indexBits;
-
+let CACHE_L1 = [];
 let CACHE_L2 = [];
-for (let i = 0; i < CACHE_DATA_L2.NumberOfSets; i++) {
-  let set = [];
-  for (let j = 0; j < CACHE_DATA_L2.associativity; j++) {
-    let cacheLine = {
-      tag: null,
-      isValid: true,
-      block: [],
-    };
-    for (let k = 0; k < CACHE_DATA_L2.blockSize; k++) {
-      cacheLine.block.push(0);
-    }
-    set.push(cacheLine);
+
+let calculate_cache = () => {
+  CACHE_L1 = [];
+  CACHE_L2 = [];
+  CACHE_DATA_L1.NumberOfSets =
+    CACHE_DATA_L1.cacheSize /
+    (CACHE_DATA_L1.associativity * CACHE_DATA_L1.blockSize);
+  CACHE_DATA_L1.offsetBits = Math.log2(CACHE_DATA_L1.blockSize);
+  CACHE_DATA_L1.indexBits = Math.log2(CACHE_DATA_L1.NumberOfSets);
+  CACHE_DATA_L1.tagBits =
+    32 - CACHE_DATA_L1.offsetBits - CACHE_DATA_L1.indexBits;
+  CACHE_DATA_L1.calls = 0;
+  CACHE_DATA_L1.misses = 0;
+  CACHE_DATA_L1.hits = 0;
+
+  for (let i = 0; i < CACHE_DATA_L1.NumberOfSets; i++) {
+    let set = { cache_line: new Map(), head: null, tail: null };
+    CACHE_L1.push(set);
   }
-  CACHE_L2.push(set);
-}
-console.log("MyCache2", CACHE_L2);
+  console.log("MyCache", CACHE_L1);
+  console.log("Tag bits", CACHE_DATA_L1.tagBits);
+  console.log("index bits", CACHE_DATA_L1.indexBits);
+  console.log("offset bits", CACHE_DATA_L1.offsetBits);
+
+  CACHE_DATA_L2.NumberOfSets =
+    CACHE_DATA_L2.cacheSize /
+    (CACHE_DATA_L2.blockSize * CACHE_DATA_L2.associativity);
+  CACHE_DATA_L2.offsetBits = Math.log2(CACHE_DATA_L2.blockSize);
+  CACHE_DATA_L2.indexBits = Math.log2(CACHE_DATA_L2.NumberOfSets);
+  CACHE_DATA_L2.tagBits =
+    32 - CACHE_DATA_L2.offsetBits - CACHE_DATA_L2.indexBits;
+
+  CACHE_DATA_L2.calls = 0;
+  CACHE_DATA_L2.misses = 0;
+  CACHE_DATA_L2.hits = 0;
+  //let CACHE_L2 = [];
+  for (let i = 0; i < CACHE_DATA_L2.NumberOfSets; i++) {
+    let set = { cache_line: new Map(), head: null, tail: null };
+    CACHE_L2.push(set);
+  }
+  console.log("MyCache2", CACHE_L2);
+};
+calculate_cache();
+let addCacheConfig = (e) => {
+  e.preventDefault();
+  let sizeCachel1 = parseInt($("#cache_l1_size")[0].value);
+  let sizeUnitl1 = parseInt($("#cache_l1_size_unit")[0].value);
+  CACHE_DATA_L1.cacheSize = sizeCachel1 * sizeUnitl1;
+  CACHE_DATA_L1.blockSize = parseInt($("#cache_l1_size_block")[0].value);
+  CACHE_DATA_L1.associativity = parseInt($("#cache_l1_associativity")[0].value);
+  CACHE_DATA_L1.accessLatency = parseInt(
+    $("#cache_l1_access_latency")[0].value
+  );
+
+  let sizeCachel2 = parseInt($("#cache_l2_size")[0].value);
+  let sizeUnitl2 = parseInt($("#cache_l2_size_unit")[0].value);
+  CACHE_DATA_L2.cacheSize = sizeCachel2 * sizeUnitl2;
+  CACHE_DATA_L2.blockSize = parseInt($("#cache_l2_size_block")[0].value);
+  CACHE_DATA_L2.associativity = parseInt($("#cache_l2_associativity")[0].value);
+  CACHE_DATA_L2.accessLatency = parseInt(
+    $("#cache_l2_access_latency")[0].value
+  );
+  CACHE_DATA_L1.memoryAccessTime = parseInt($("#memory_access")[0].value);
+  calculate_cache();
+};
+
+let config_set_button = document.getElementById("config_set");
+config_set_button.onclick = (e) => {
+  addCacheConfig(e);
+  console.log(CACHE_DATA_L1, CACHE_DATA_L2);
+};
 
 let rearrangeSet = (head, tail, target) => {
   if (target == tail) {
@@ -158,7 +185,8 @@ let rearrangeSet = (head, tail, target) => {
   return [head, tail];
 };
 
-let getDataFromCache = (address) => {
+let getDataFromCacheL1 = (address, numberOfBytes) => {
+  CACHE_DATA_L1.calls++;
   //address has to be sent as binary
   memory[16] = 5;
   let oldLength = address.length;
@@ -183,6 +211,7 @@ let getDataFromCache = (address) => {
   let respectiveSet = CACHE_L1[indexValue];
 
   if (respectiveSet.cache_line.has(tagValue)) {
+    CACHE_DATA_L1.hits++;
     //CACHE HIT
     console.log("CACHE HIT");
     [respectiveSet.head, respectiveSet.tail] = rearrangeSet(
@@ -190,30 +219,401 @@ let getDataFromCache = (address) => {
       respectiveSet.tail,
       respectiveSet.cache_line.get(tagValue)
     );
-    return respectiveSet.cache_line.get(tagValue).block[offsetValue];
+
+    let returnValue = [];
+    let cost = CACHE_DATA_L1.accessLatency;
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let remainingBytes = getDataFromCacheL1(newAddress, numberOfBytes - j);
+        returnValue = returnValue.concat(remainingBytes.value);
+        cost += remainingBytes.cost;
+        break;
+      }
+      returnValue.push(
+        respectiveSet.cache_line.get(tagValue).block[offsetValue + j]
+      );
+    }
+    return {
+      value: returnValue,
+      cost,
+    };
   }
+  CACHE_DATA_L1.misses++;
+  let dataFromL2 = getDataFromCacheL2(address);
+  let NodeFromL2 = { ...dataFromL2.node };
+  NodeFromL2.tag = tagValue;
+  let cost = dataFromL2.cost; //I'm not adding L1 cache latency here
 
   if (respectiveSet.cache_line.size === CACHE_DATA_L1.associativity) {
     //evict
-    console.log("Eviction");
+    console.log("Eviction from load l1");
+
+    if (respectiveSet.head.isDirty) {
+      //et temp=storeDataInCacheL2()
+      let addressOfTheBlock = respectiveSet.head.tag + indexValue + offsetValue;
+      addBlockToL2(addressOfTheBlock, respectiveSet.head);
+    }
+
+    //let newNode = new Node(block, tagValue);
+    let newNode = NodeFromL2;
+    let nodeToBeDel = respectiveSet.head;
+    respectiveSet.head.left = null;
+    respectiveSet.head = respectiveSet.head.right;
+
+    respectiveSet.cache_line.delete(nodeToBeDel.tag);
+    newNode.left = respectiveSet.tail;
+    newNode.right = null;
+    respectiveSet.tail.right = newNode;
+    respectiveSet.tail = newNode;
+    respectiveSet.cache_line.set(tagValue, newNode);
+
+    let returnValue = [];
+
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let remainingBytes = getDataFromCacheL1(newAddress, numberOfBytes - j);
+        returnValue = returnValue.concat(remainingBytes.value);
+        cost += remainingBytes.cost;
+        break;
+      }
+      returnValue.push(newNode.block[offsetValue + j]);
+    }
+    return {
+      value: returnValue,
+      cost,
+    };
+  } else {
+    //load
+
+    //respectiveSet.cache_line.set(tagValue, block);
+
+    if (respectiveSet.head == null) {
+      //let newNode = new Node(block, tagValue);
+      let newNode = NodeFromL2;
+      newNode.right = null;
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.head = newNode;
+      respectiveSet.tail = newNode;
+    } else {
+      //let newNode = new Node(block, tagValue);
+      let newNode = NodeFromL2;
+      newNode.right = null;
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.tail.right = newNode;
+      newNode.left = respectiveSet.tail;
+      respectiveSet.tail = newNode;
+    }
+    let returnValue = [];
+
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let remainingBytes = getDataFromCacheL1(newAddress, numberOfBytes - j);
+        returnValue = returnValue.concat(remainingBytes.value);
+        cost += remainingBytes.cost;
+        break;
+      }
+      returnValue.push(NodeFromL2.block[offsetValue + j]);
+    }
+    return {
+      value: returnValue,
+      cost,
+    };
+  }
+};
+
+let storeDataInCacheL1 = (address, value) => {
+  CACHE_DATA_L1.calls++;
+  let oldLength = address.length;
+  for (let i = 0; i < 32 - oldLength; i++) {
+    address = "0" + address;
+  }
+
+  let tagBitsOfAddress = address.slice(0, CACHE_DATA_L1.tagBits);
+  let tagValue = parseInt(tagBitsOfAddress, 2); //decimal value of tag
+  let indexBitsOfAddress = address.slice(
+    CACHE_DATA_L1.tagBits,
+    CACHE_DATA_L1.indexBits + CACHE_DATA_L1.tagBits
+  );
+  let indexValue = parseInt(indexBitsOfAddress, 2);
+  let offsetBitsOfAddress = address.slice(
+    CACHE_DATA_L1.tagBits + CACHE_DATA_L1.indexBits,
+    address.length
+  );
+  let offsetValue = parseInt(offsetBitsOfAddress, 2);
+  console.log(tagBitsOfAddress, indexBitsOfAddress, offsetBitsOfAddress);
+
+  let respectiveSet = CACHE_L1[indexValue];
+
+  if (respectiveSet.cache_line.has(tagValue)) {
+    CACHE_DATA_L1.hits++;
+    //CACHE HIT
+    console.log("CACHE HIT");
+    [respectiveSet.head, respectiveSet.tail] = rearrangeSet(
+      respectiveSet.head,
+      respectiveSet.tail,
+      respectiveSet.cache_line.get(tagValue)
+    );
+    let numberOfBytes = value.length;
+    let cost = CACHE_DATA_L1.accessLatency;
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let extraCost = storeDataInCacheL1(
+          newAddress,
+          value.slice(j, numberOfBytes)
+        );
+
+        cost += extraCost;
+        break;
+      }
+      respectiveSet.cache_line.get(tagValue).block[offsetValue + j] = value[j];
+    }
+
+    //respectiveSet.cache_line.get(tagValue).block[offsetValue] = value;
+    respectiveSet.cache_line.get(tagValue).isDirty = true;
+    return cost;
+  }
+  CACHE_DATA_L1.misses++;
+  let dataFromL2 = storeDataInCacheL2(address, value);
+
+  let NodeFromL2 = { ...dataFromL2.node };
+  NodeFromL2.tag = tagValue;
+
+  let cost = dataFromL2.cost;
+
+  if (respectiveSet.cache_line.size === CACHE_DATA_L1.associativity) {
+    //evict
+
+    if (respectiveSet.head.isDirty) {
+      //et temp=storeDataInCacheL2()
+      let addressOfTheBlock = respectiveSet.head.tag + indexValue + offsetValue;
+      addBlockToL2(addressOfTheBlock, respectiveSet.head);
+    }
+    console.log("Eviction from store l1");
+
+    let newNode = NodeFromL2;
+    newNode.right = null;
+    let nodeToBeDel = respectiveSet.head;
+    respectiveSet.head.left = null;
+    respectiveSet.head = respectiveSet.head.right;
+
+    respectiveSet.cache_line.delete(nodeToBeDel.tag);
+    newNode.left = respectiveSet.tail;
+    respectiveSet.tail.right = newNode;
+    respectiveSet.tail = newNode;
+    newNode.isDirty = true;
+
+    let numberOfBytes = value.length;
+
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let extraCost = storeDataInCacheL1(
+          newAddress,
+          value.slice(j, numberOfBytes)
+        );
+
+        cost += extraCost;
+        break;
+      }
+      newNode.block[offsetValue + j] = value[j];
+    }
+    respectiveSet.cache_line.set(tagValue, newNode);
+    return cost;
+  } else {
+    //load
+
+    //respectiveSet.cache_line.set(tagValue, block);
+
+    if (respectiveSet.head == null) {
+      let newNode = NodeFromL2;
+      newNode.right = null;
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.head = newNode;
+      respectiveSet.tail = newNode;
+
+      let numberOfBytes = value.length;
+
+      for (let j = 0; j < numberOfBytes; j++) {
+        if (offsetValue + j >= 64) {
+          let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+          for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+            newAddress += "0";
+          }
+          let extraCost = storeDataInCacheL1(
+            newAddress,
+            value.slice(j, numberOfBytes)
+          );
+
+          cost += extraCost;
+          break;
+        }
+        newNode.block[offsetValue + j] = value[j];
+      }
+      respectiveSet.cache_line.set(tagValue, newNode);
+      newNode.isDirty = true;
+      return cost;
+    } else {
+      let newNode = NodeFromL2;
+      newNode.right = null;
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.tail.right = newNode;
+      newNode.left = respectiveSet.tail;
+      respectiveSet.tail = newNode;
+
+      let numberOfBytes = value.length;
+
+      for (let j = 0; j < numberOfBytes; j++) {
+        if (offsetValue + j >= 64) {
+          let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+          for (let k = 0; k < CACHE_DATA_L1.offsetBits; k++) {
+            newAddress += "0";
+          }
+          let extraCost = storeDataInCacheL1(
+            newAddress,
+            value.slice(j, numberOfBytes)
+          );
+
+          cost += extraCost;
+          break;
+        }
+        newNode.block[offsetValue + j] = value[j];
+      }
+      respectiveSet.cache_line.set(tagValue, newNode);
+      newNode.isDirty = true;
+      return cost;
+    }
+  }
+};
+
+let addBlockToL2 = (address, node) => {
+  address = address.toString(2);
+  let oldLength = address.length;
+  for (let i = 0; i < 32 - oldLength; i++) {
+    address = "0" + address;
+  }
+  let tagBitsOfAddress = address.slice(0, CACHE_DATA_L2.tagBits);
+  let tagValue = parseInt(tagBitsOfAddress, 2); //decimal value of tag
+  let indexBitsOfAddress = address.slice(
+    CACHE_DATA_L2.tagBits,
+    CACHE_DATA_L2.indexBits + CACHE_DATA_L2.tagBits
+  );
+  console.log("cndsk", tagValue);
+  let indexValue = parseInt(indexBitsOfAddress, 2);
+
+  let respectiveSet = CACHE_L2[indexValue];
+  if (respectiveSet.cache_line.has(tagValue)) {
+    //CACHE HIT
+
+    respectiveSet.cache_line.get(tagValue).block = [...node.block];
+    respectiveSet.cache_line.get(tagValue).isDirty = true;
+    return;
+  }
+  //if it's not there in L2 cache then just write to memory
+  for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
+    memory[parseInt(tagBitsOfAddress + indexBitsOfAddress, 2) + i] =
+      node.block[i];
+  }
+  console.log(memory);
+};
+
+let getDataFromCacheL2 = (address) => {
+  CACHE_DATA_L2.calls++;
+  //address has to be sent as binary
+  memory[16] = 5;
+  let oldLength = address.length;
+  for (let i = 0; i < 32 - oldLength; i++) {
+    address = "0" + address;
+  }
+
+  let tagBitsOfAddress = address.slice(0, CACHE_DATA_L2.tagBits);
+  let tagValue = parseInt(tagBitsOfAddress, 2); //decimal value of tag
+  let indexBitsOfAddress = address.slice(
+    CACHE_DATA_L2.tagBits,
+    CACHE_DATA_L2.indexBits + CACHE_DATA_L2.tagBits
+  );
+  let indexValue = parseInt(indexBitsOfAddress, 2);
+  let offsetBitsOfAddress = address.slice(
+    CACHE_DATA_L2.tagBits + CACHE_DATA_L2.indexBits,
+    address.length
+  );
+  let offsetValue = parseInt(offsetBitsOfAddress, 2);
+  console.log(tagBitsOfAddress, indexBitsOfAddress, offsetBitsOfAddress);
+
+  let respectiveSet = CACHE_L2[indexValue];
+
+  if (respectiveSet.cache_line.has(tagValue)) {
+    //CACHE HIT
+    CACHE_DATA_L2.hits++;
+    console.log("CACHE HIT in L2");
+    [respectiveSet.head, respectiveSet.tail] = rearrangeSet(
+      respectiveSet.head,
+      respectiveSet.tail,
+      respectiveSet.cache_line.get(tagValue)
+    );
+    return {
+      node: respectiveSet.cache_line.get(tagValue),
+      cost: CACHE_DATA_L2.accessLatency,
+    };
+  }
+  CACHE_DATA_L2.misses++;
+
+  if (respectiveSet.cache_line.size === CACHE_DATA_L2.associativity) {
+    //evict
+    console.log("Eviction l2l");
+    //writing to memory
+    if (respectiveSet.head.isDirty === true) {
+      for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
+        memory[parseInt(head.tag + indexBitsOfAddress, 2) + i] =
+          respectiveSet.head.block[i];
+      }
+    }
     let block = [];
-    for (let i = 0; i < CACHE_DATA_L1.blockSize; i++) {
+    for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
       block[i] = memory[tagValue + i];
     }
     let newNode = new Node(block, tagValue);
     let nodeToBeDel = respectiveSet.head;
-    respectiveSet.head = respectiveSet.head.right;
     respectiveSet.head.left = null;
+    respectiveSet.head = respectiveSet.head.right;
     respectiveSet.cache_line.delete(nodeToBeDel.tag);
     newNode.left = respectiveSet.tail;
     respectiveSet.tail.right = newNode;
     respectiveSet.tail = newNode;
     respectiveSet.cache_line.set(tagValue, newNode);
-    return block[offsetValue];
+    return {
+      node: newNode,
+      cost: CACHE_DATA_L2.accessLatency + CACHE_DATA_L1.memoryAccessTime, //assuming 5 is penalty
+    };
   } else {
     //load
     let block = [];
-    for (let i = 0; i < CACHE_DATA_L1.blockSize; i++) {
+    for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
       block[i] = memory[tagValue + i];
     }
     //respectiveSet.cache_line.set(tagValue, block);
@@ -223,24 +623,231 @@ let getDataFromCache = (address) => {
       respectiveSet.cache_line.set(tagValue, newNode);
       respectiveSet.head = newNode;
       respectiveSet.tail = newNode;
+      return {
+        node: newNode,
+        cost: CACHE_DATA_L2.accessLatency + CACHE_DATA_L1.memoryAccessTime, //assuming 5 is penalty
+      };
     } else {
       let newNode = new Node(block, tagValue);
       respectiveSet.cache_line.set(tagValue, newNode);
       respectiveSet.tail.right = newNode;
       newNode.left = respectiveSet.tail;
       respectiveSet.tail = newNode;
+      return {
+        node: newNode,
+        cost: CACHE_DATA_L2.accessLatency + CACHE_DATA_L1.memoryAccessTime, //assuming 5 is penalty
+      };
     }
-    return block[offsetValue];
   }
 };
 
-console.log(getDataFromCache((16).toString(2)));
-console.log(getDataFromCache((17).toString(2)));
-console.log(getDataFromCache((8193).toString(2)));
-console.log(getDataFromCache((8192 * 2).toString(2)));
-console.log(getDataFromCache((8192 * 4).toString(2)));
-console.log(getDataFromCache((8192 * 8).toString(2)));
+let storeDataInCacheL2 = (address, value) => {
+  CACHE_DATA_L2.calls++;
+  let oldLength = address.length;
+  for (let i = 0; i < 32 - oldLength; i++) {
+    address = "0" + address;
+  }
 
+  let tagBitsOfAddress = address.slice(0, CACHE_DATA_L2.tagBits);
+  let tagValue = parseInt(tagBitsOfAddress, 2); //decimal value of tag
+  let indexBitsOfAddress = address.slice(
+    CACHE_DATA_L2.tagBits,
+    CACHE_DATA_L2.indexBits + CACHE_DATA_L2.tagBits
+  );
+  let indexValue = parseInt(indexBitsOfAddress, 2);
+  let offsetBitsOfAddress = address.slice(
+    CACHE_DATA_L2.tagBits + CACHE_DATA_L2.indexBits,
+    address.length
+  );
+  let offsetValue = parseInt(offsetBitsOfAddress, 2);
+  console.log(tagBitsOfAddress, indexBitsOfAddress, offsetBitsOfAddress);
+
+  let respectiveSet = CACHE_L2[indexValue];
+
+  if (respectiveSet.cache_line.has(tagValue)) {
+    CACHE_DATA_L2.hits++;
+    //CACHE HIT
+    console.log("CACHE HIT");
+    [respectiveSet.head, respectiveSet.tail] = rearrangeSet(
+      respectiveSet.head,
+      respectiveSet.tail,
+      respectiveSet.cache_line.get(tagValue)
+    );
+
+    let numberOfBytes = value.length;
+    let cost = CACHE_DATA_L2.accessLatency;
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L2.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let extraCost = storeDataInCacheL1(
+          newAddress,
+          value.slice(j, numberOfBytes)
+        );
+
+        cost += extraCost;
+        break;
+      }
+      respectiveSet.cache_line.get(tagValue).block[offsetValue + j] = value[j];
+    }
+
+    //respectiveSet.cache_line.get(tagValue).block[offsetValue] = value;
+    respectiveSet.cache_line.get(tagValue).isDirty = true;
+    return {
+      node: respectiveSet.cache_line.get(tagValue),
+      cost,
+    };
+  }
+  CACHE_DATA_L2.misses++;
+
+  let cost = CACHE_DATA_L2.accessLatency + CACHE_DATA_L1.memoryAccessTime; //penalty
+  //memory[parseInt(address, 2)] = value;
+
+  if (respectiveSet.cache_line.size === CACHE_DATA_L2.associativity) {
+    //evict
+
+    //writing to memory
+    if (respectiveSet.head.isDirty === true) {
+      for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
+        memory[parseInt(head.tag + indexBitsOfAddress, 2) + i] =
+          respectiveSet.head.block[i];
+      }
+    }
+
+    console.log("Eviction l2s", tagValue);
+
+    let block = [];
+    for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
+      block[i] = memory[tagValue + i];
+    }
+    let newNode = new Node(block, tagValue);
+    let nodeToBeDel = respectiveSet.head;
+    respectiveSet.head.left = null;
+    respectiveSet.head = respectiveSet.head.right;
+
+    respectiveSet.cache_line.delete(nodeToBeDel.tag);
+    newNode.left = respectiveSet.tail;
+    respectiveSet.tail.right = newNode;
+    respectiveSet.tail = newNode;
+
+    let numberOfBytes = value.length;
+
+    for (let j = 0; j < numberOfBytes; j++) {
+      if (offsetValue + j >= 64) {
+        let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+        for (let k = 0; k < CACHE_DATA_L2.offsetBits; k++) {
+          newAddress += "0";
+        }
+        let extraCost = storeDataInCacheL1(
+          newAddress,
+          value.slice(j, numberOfBytes)
+        );
+
+        cost += extraCost;
+        break;
+      }
+      newNode.block[offsetValue + j] = value[j];
+    }
+
+    //respectiveSet.cache_line.get(tagValue).block[offsetValue] = value;
+    newNode.isDirty = true;
+    respectiveSet.cache_line.set(tagValue, newNode);
+    return {
+      node: newNode,
+      cost,
+    };
+  } else {
+    //load
+    let block = [];
+    for (let i = 0; i < CACHE_DATA_L2.blockSize; i++) {
+      block[i] = memory[tagValue + i];
+    }
+
+    //respectiveSet.cache_line.set(tagValue, block);
+
+    if (respectiveSet.head == null) {
+      let newNode = new Node(block, tagValue);
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.head = newNode;
+      respectiveSet.tail = newNode;
+      let numberOfBytes = value.length;
+
+      for (let j = 0; j < numberOfBytes; j++) {
+        if (offsetValue + j >= 64) {
+          let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+          for (let k = 0; k < CACHE_DATA_L2.offsetBits; k++) {
+            newAddress += "0";
+          }
+          let extraCost = storeDataInCacheL1(
+            newAddress,
+            value.slice(j, numberOfBytes)
+          );
+
+          cost += extraCost;
+          break;
+        }
+        newNode.block[offsetValue + j] = value[j];
+      }
+
+      //respectiveSet.cache_line.get(tagValue).block[offsetValue] = value;
+      newNode.isDirty = true;
+      respectiveSet.cache_line.set(tagValue, newNode);
+      return {
+        node: newNode,
+        cost,
+      };
+    } else {
+      let newNode = new Node(block, tagValue);
+      respectiveSet.cache_line.set(tagValue, newNode);
+      respectiveSet.tail.right = newNode;
+      newNode.left = respectiveSet.tail;
+      respectiveSet.tail = newNode;
+      let numberOfBytes = value.length;
+
+      for (let j = 0; j < numberOfBytes; j++) {
+        if (offsetValue + j >= 64) {
+          let newAddress = tagBitsOfAddress + (indexValue + 1).toString(2);
+
+          for (let k = 0; k < CACHE_DATA_L2.offsetBits; k++) {
+            newAddress += "0";
+          }
+          let extraCost = storeDataInCacheL1(
+            newAddress,
+            value.slice(j, numberOfBytes)
+          );
+
+          cost += extraCost;
+          break;
+        }
+        newNode.block[offsetValue + j] = value[j];
+      }
+
+      //respectiveSet.cache_line.get(tagValue).block[offsetValue] = value;
+      newNode.isDirty = true;
+      respectiveSet.cache_line.set(tagValue, newNode);
+      return {
+        node: newNode,
+        cost,
+      };
+    }
+  }
+};
+
+// console.log(getDataFromCacheL1((16).toString(2), 4));
+// //console.log(getDataFromCacheL1((64).toString(2), 4));
+// //console.log(getDataFromCacheL1((16).toString(2), 4));
+// console.log(storeDataInCacheL1((62).toString(2), [17, 18, 19, 20]));
+// console.log(getDataFromCacheL1((62).toString(2), 4));
+
+// console.log(CACHE_DATA_L1, CACHE_DATA_L2);
+
+//console.log(storeDataInCacheL1((8192 * 8).toString(2), "heya"));
+// console.log(getDataFromCacheL1((8192 * 8).toString(2)));
 //===============================================================
 //isBeingWritten denotes whether the the register is getting written in any other instruction. Is it's true then it's value is of no use.
 var registers = new Map([
@@ -654,6 +1261,7 @@ function InstructionDecode(jumpPositions) {
 
   if (instructionType === "sw" || instructionType === "lw") {
     let rd = instructionToBeDecoded[1][1] + instructionToBeDecoded[1][2];
+    console.log(rd);
     let rdVal = registers.get(rd).value;
     if (instructionType === "lw") {
       registers.set(rd, { value: rdVal, isBeingWritten: true });
@@ -802,11 +1410,17 @@ function MemoryWrite(memoryIndex, cycle) {
   if (EX_UNIT.latch.instructionType === "lw") {
     let BinaryEquivalent = "";
     //console.log(EX_UNIT.latch.loadAddress);
-    BinaryEquivalent =
-      memory[EX_UNIT.latch.loadAddress] +
-      memory[EX_UNIT.latch.loadAddress + 1] +
-      memory[EX_UNIT.latch.loadAddress + 2] +
-      memory[EX_UNIT.latch.loadAddress + 3];
+    // BinaryEquivalent =
+    //   memory[EX_UNIT.latch.loadAddress] +
+    //   memory[EX_UNIT.latch.loadAddress + 1] +
+    //   memory[EX_UNIT.latch.loadAddress + 2] +
+    //   memory[EX_UNIT.latch.loadAddress + 3];
+
+    let CacheResponse = getDataFromCacheL1(
+      EX_UNIT.latch.loadAddress.toString(2),
+      4
+    );
+    BinaryEquivalent = CacheResponse.value.join("");
 
     //console.log(BinaryEquivalent);
     //console.log(parseInt(BinaryEquivalent.slice(1, 32), 2), Math.pow(2 * parseInt(BinaryEquivalent[0]), 31))
@@ -824,14 +1438,14 @@ function MemoryWrite(memoryIndex, cycle) {
     // temp_MEM_UNIT.push(result);
     // console.log(temp_MEM_UNIT);
     //console.log(decimalValue)
-    return result;
+    return { data: result, cost: CacheResponse.cost - 1, stall: false };
   } else if (EX_UNIT.latch.instructionType === "sw") {
     let numberToBeStored = EX_UNIT.latch.rdVal;
 
     if (numberToBeStored.isDirty) {
       let returnVal = CheckForwardedData(EX_UNIT.latch.rd);
       if (returnVal === "stall") {
-        return "stall";
+        return { data: null, cost: 0, stall: true };
       } else {
         numberToBeStored.value = returnVal;
       }
@@ -844,11 +1458,22 @@ function MemoryWrite(memoryIndex, cycle) {
       BinaryEquivalent = "0" + BinaryEquivalent;
     }
     //console.log("Store Address", EX_UNIT.latch.storeAddress);
+    let word_store = [];
+    word_store.push(BinaryEquivalent.slice(0, 8));
+    word_store.push(BinaryEquivalent.slice(8, 16));
+    word_store.push(BinaryEquivalent.slice(16, 24));
+    word_store.push(BinaryEquivalent.slice(24, 32));
+
+    let cost = storeDataInCacheL1(
+      EX_UNIT.latch.storeAddress.toString(2),
+      word_store
+    );
+
     memory[EX_UNIT.latch.storeAddress] = BinaryEquivalent.slice(0, 8);
     memory[EX_UNIT.latch.storeAddress + 1] = BinaryEquivalent.slice(8, 16);
     memory[EX_UNIT.latch.storeAddress + 2] = BinaryEquivalent.slice(16, 24);
     memory[EX_UNIT.latch.storeAddress + 3] = BinaryEquivalent.slice(24, 32);
-    console.log(memory);
+    console.log("Look here", [...memory]);
     if (EX_UNIT.latch.storeAddress >= memoryIndex) {
       wordAddresses.push(EX_UNIT.latch.storeAddress);
       //console.log(EX_UNIT.latch.storeAddress);
@@ -858,14 +1483,14 @@ function MemoryWrite(memoryIndex, cycle) {
       ...EX_UNIT.latch,
       WriteBackValue: null,
     };
-    return null;
+    return { data: null, cost: cost - 1, stall: 0 };
   } else {
     MEM_UNIT.latch = {
       ...EX_UNIT.latch,
     };
     let result = {};
     result[EX_UNIT.latch.rd] = EX_UNIT.latch.WriteBackValue;
-    return result;
+    return { data: result, stall: false, cost: 0 };
   }
 }
 
@@ -978,6 +1603,7 @@ submit.onclick = () => {
       }
     }
   }
+  console.log("Look here", [...memory]);
 
   displayMemory(memoryIndex);
 
@@ -992,8 +1618,8 @@ submit.onclick = () => {
   temp.instruction = splitted[nextInstructionIndex];
   InstructionQueue.push(temp);
   let cycleData = [];
-
-  while (InstructionQueue.length != 0) {
+  let cyclesLeftForMEM = 0;
+  while (cycle <= 20 && InstructionQueue.length != 0) {
     let jobsDoneInCurrentCycle = [];
     let resultFromEx = null;
     let resultFromMem = null;
@@ -1008,7 +1634,7 @@ submit.onclick = () => {
       if (!stall) {
         switch (currentJob.currentStage) {
           case 0: {
-            //console.log("IF");
+            console.log("IF");
             if (!IF_UNIT.locked) {
               //console.log("NEW INS FETCHED", splitted[nextInstructionIndex]);
               IF_UNIT.locked = true;
@@ -1042,7 +1668,7 @@ submit.onclick = () => {
           }
           case 1: {
             if (!ID_UNIT.locked) {
-              //console.log("ID");
+              console.log("ID");
               ID_UNIT.locked = true;
               let newPC = InstructionDecode(jumpPositions);
               //console.log("ID Return value ", newPC);
@@ -1098,7 +1724,7 @@ submit.onclick = () => {
           case 2: {
             //execution
             // console.log(ID_UNIT.latch.operand1);
-            // console.log("EX");
+            console.log("EX");
             if (!EX_UNIT.locked) {
               EX_UNIT.locked = true;
 
@@ -1141,33 +1767,58 @@ submit.onclick = () => {
 
           case 3: {
             //MEM
-            //console.log("MEM");
+            console.log("MEM");
+
             if (!MEM_UNIT.locked) {
               MEM_UNIT.locked = true;
 
-              let returnVal = MemoryWrite(memoryIndex, cycle);
-              if (returnVal === "stall") {
-                stall = true;
-                let jobData = {
-                  stage: "STL",
-                  instruction: currentJob.instruction,
-                };
-                jobsDoneInCurrentCycle.push(jobData);
-                InstructionQueue.shift();
-                InstructionQueue.push(currentJob);
+              if (cyclesLeftForMEM == 0) {
+                let returnVal = MemoryWrite(memoryIndex, cycle);
+                if (returnVal.stall === true) {
+                  stall = true;
+
+                  let jobData = {
+                    stage: "STL",
+                    instruction: currentJob.instruction,
+                  };
+                  jobsDoneInCurrentCycle.push(jobData);
+                  InstructionQueue.shift();
+                  InstructionQueue.push(currentJob);
+                } else {
+                  cyclesLeftForMEM = returnVal.cost;
+                  let jobData = {
+                    stage: "MEM",
+                    instruction: currentJob.instruction,
+                  };
+                  jobsDoneInCurrentCycle.push(jobData);
+                  if (returnVal.data != null) {
+                    resultFromMem = returnVal.data;
+                  }
+                  if (cyclesLeftForMEM === 0) {
+                    currentJob.currentStage++;
+                    InstructionQueue.push(currentJob);
+                    InstructionQueue.shift();
+                  } else {
+                    InstructionQueue.push(currentJob);
+                    InstructionQueue.shift();
+                  }
+                }
               } else {
+                cyclesLeftForMEM--;
                 let jobData = {
                   stage: "MEM",
                   instruction: currentJob.instruction,
                 };
                 jobsDoneInCurrentCycle.push(jobData);
-                if (returnVal) {
-                  resultFromMem = returnVal;
+                if (cyclesLeftForMEM == 0) {
+                  currentJob.currentStage++;
+                  InstructionQueue.push(currentJob);
+                  InstructionQueue.shift();
+                } else {
+                  InstructionQueue.push(currentJob);
+                  InstructionQueue.shift();
                 }
-                currentJob.currentStage++;
-                InstructionQueue.push(currentJob);
-                InstructionQueue.shift();
-              } //removes the first element in the array}
+              }
             } else {
               stall = true;
               let jobData = {
@@ -1182,7 +1833,7 @@ submit.onclick = () => {
           }
           case 4: {
             //WB
-            //console.log("WB");
+            console.log("WB");
             if (!WB_UNIT.locked) {
               WB_UNIT.locked = true;
               console.log(MEM_UNIT);
@@ -1263,7 +1914,7 @@ submit.onclick = () => {
   // console.log(registers);
   // console.log(cycleData);
   let cycleDataString = JSON.stringify(cycleData);
-  //console.log(TotalInstructionsExecuted);
+  console.log(TotalInstructionsExecuted);
 
   let cycleDataInput = document.getElementById("cycle-data");
   let cycleInput = document.getElementById("numberOfCycles");

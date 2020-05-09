@@ -51,19 +51,42 @@
       <div class="four wide column">
         <div
           class="ui top attached tabular menu"
-          style="background-color: #17141d; color: white;"
+          style="background-color: inherit; color: white;"
         >
           <a
             class="item active"
-            style="background-color: #17141d; color: white;"
+            style="
+              background-color: #17141d;
+              color: white;
+              margin: 0px;
+              padding: 1.3rem;
+            "
             data-tab="registers"
             >Registers</a
           >
           <a
             class="item"
-            style="background-color: #17141d; color: white;"
+            style="
+              background-color: #17141d;
+              color: white;
+              margin: 0px;
+              padding: 1.3rem;
+            "
             data-tab="Memory"
             >Memory</a
+          >
+
+          <a
+            class="item"
+            style="
+              background-color: #17141d;
+              color: white;
+              padding: 1.3rem;
+              margin: 0px;
+            "
+            data-tab="Cache"
+          >
+            Configure Cache</a
           >
         </div>
 
@@ -73,7 +96,7 @@
           style="background-color: #17141d; color: white;"
         >
           <div class="ui inverted relaxed divided list">
-            <h2 class="ui blue inverted header" style="margin-left: 10px;">
+            <h2 class="ui blue inverted header" style="margin-left: 1rem;">
               Registers
             </h2>
             <div class="registerDiv"></div>
@@ -89,6 +112,154 @@
               Memory
             </h2>
             <div class="memoryDiv"></div>
+          </div>
+        </div>
+
+        <div
+          class="ui segment bottom tab attached"
+          data-tab="Cache"
+          style="background-color: #17141d; color: white;"
+        >
+          <div class="ui inverted relaxed divided list">
+            <h2 class="ui blue inverted header" style="margin-left: 10px;">
+              Cache Configuration
+            </h2>
+            <div class="CacheDiv" style="width: 70%; margin-left: 0.4rem;">
+              <form class="ui form">
+                <div class="field">
+                  <label class="ui purple inverted header"
+                    >Memory Access Time(cycles)</label
+                  >
+                  <input
+                    type="text"
+                    name="access"
+                    placeholder="20"
+                    id="memory_access"
+                  />
+                </div>
+                <h4 class="ui dividing orange inverted header">Cache L1</h4>
+                <div class="field">
+                  <label class="ui purple inverted header">Cache Size</label>
+                  <div class="two fields">
+                    <div class="eight wide field">
+                      <input
+                        type="text"
+                        name="size"
+                        id="cache_l1_size"
+                        placeholder="2"
+                      />
+                    </div>
+                    <div class="eight wide field">
+                      <select
+                        class="ui search dropdown"
+                        id="cache_l1_size_unit"
+                      >
+                        <option value="1024">KB</option>
+                        <option value="1048576">MB</option>
+                        <option value="1073741824">GB</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="two fields">
+                  <div class="field">
+                    <label class="ui purple inverted header">Block Size</label>
+                    <input
+                      type="text"
+                      name="block size"
+                      id="cache_l1_size_block"
+                      placeholder="64"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="ui purple inverted header"
+                      >Associativity</label
+                    >
+                    <input
+                      type="text"
+                      name="Associativity"
+                      placeholder="4"
+                      id="cache_l1_associativity"
+                    />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="ui purple inverted header"
+                    >Access Latency(cycles)</label
+                  >
+                  <input
+                    type="text"
+                    name="access"
+                    placeholder="1"
+                    id="cache_l1_access_latency"
+                  />
+                </div>
+
+                <h4 class="ui dividing orange inverted header">Cache L2</h4>
+                <div class="field">
+                  <label class="ui purple inverted header">Cache Size</label>
+                  <div class="two fields">
+                    <div class="eight wide field">
+                      <input
+                        type="text"
+                        name="size"
+                        placeholder="8"
+                        id="cache_l2_size"
+                      />
+                    </div>
+                    <div class="eight wide field">
+                      <select
+                        class="ui search dropdown"
+                        id="cache_l2_size_unit"
+                      >
+                        <option value="1024">KB</option>
+                        <option value="1048576">MB</option>
+                        <option value="1073741824">GB</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="two fields">
+                  <div class="field">
+                    <label class="ui purple inverted header">Block Size</label>
+                    <input
+                      type="text"
+                      name="block size"
+                      placeholder="64"
+                      id="cache_l2_size_block"
+                    />
+                  </div>
+                  <div class="field">
+                    <label class="ui purple inverted header"
+                      >Associativity</label
+                    >
+                    <input
+                      type="text"
+                      name="Associativity"
+                      placeholder="4"
+                      id="cache_l2_associativity"
+                    />
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="ui purple inverted header"
+                    >Access Latency(cycles)</label
+                  >
+                  <input
+                    type="text"
+                    name="access"
+                    placeholder="4"
+                    id="cache_l2_access_latency"
+                  />
+                </div>
+
+                <div class="field">
+                  <button class="ui orange button" id="config_set">
+                    Set Configuration
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
