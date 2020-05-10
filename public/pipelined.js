@@ -1939,15 +1939,17 @@ submit.onclick = () => {
 
   let miss_rate_l1 = document.getElementById("CacheL1MissRate");
   miss_rate_l1.innerHTML =
-    (CACHE_DATA_L1.misses * 100) /
-      (CACHE_DATA_L1.calls !== 0 ? CACHE_DATA_L1.calls : 1) +
-    " %";
+    (
+      (CACHE_DATA_L1.misses * 100) /
+      (CACHE_DATA_L1.calls !== 0 ? CACHE_DATA_L1.calls : 1)
+    ).toFixed(2) + " %";
 
   let miss_rate_l2 = document.getElementById("CacheL2MissRate");
   miss_rate_l2.innerHTML =
-    (CACHE_DATA_L2.misses * 100) /
-      (CACHE_DATA_L2.calls !== 0 ? CACHE_DATA_L2.calls : 1) +
-    " %";
+    (
+      (CACHE_DATA_L2.misses * 100) /
+      (CACHE_DATA_L2.calls !== 0 ? CACHE_DATA_L2.calls : 1)
+    ).toFixed(2) + " %";
   let cacheDiv = document.getElementById("CacheMissRate");
   cacheDiv.style.display = "block";
 
