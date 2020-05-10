@@ -15,18 +15,19 @@ Users can also see the whole cycle timeline.
 Example:
 Upon running the below code:
 
-.data
-.text
-.globl main
-main:
-addi $s1,$s1,1
-addi $s2,$s2,1
-beq $s1,$s2,end
-addi $s3,$s3,1
-end:
-addi $s3,$s3,2
-![Example]("./Example_Image/Example")
-<img src="./Example_Image/Example"/>
+<p>.data</p>
+<p>.text</p>
+<p>.globl main</p>
+<p>main:</p>
+<p>addi $s1,$s1,1</p>
+<p>addi $s2,$s2,1</p>
+<p>beq $s1,$s2,end</p>
+<p>addi $s3,$s3,1</p>
+<p>end:</p>
+<p>addi $s3,$s3,2</p>
+
+<h4>The below image is the cycle timeline for the above code</h4>
+<img src="https://github.com/mir-sam-ali/MIPS_Simulator/blob/master/Example.png?raw=true"/>
 
 
-The concerned source code is public/main.js
+
