@@ -1619,7 +1619,7 @@ submit.onclick = () => {
   InstructionQueue.push(temp);
   let cycleData = [];
   let cyclesLeftForMEM = 0;
-  while (cycle <= 20 && InstructionQueue.length != 0) {
+  while (InstructionQueue.length != 0) {
     let jobsDoneInCurrentCycle = [];
     let resultFromEx = null;
     let resultFromMem = null;
@@ -1934,7 +1934,22 @@ submit.onclick = () => {
   iconEl.classList.add("icon");
   iconEl.classList.add("cyclesIcon");
   cyclesDiv.appendChild(iconEl);
-  cyclesDiv.innerHTML += "Cycles: " + cycle;
+  cyclesDiv.innerHTML +=
+    "CPI: " + (cycle / TotalInstructionsExecuted).toFixed(2);
+
+  let miss_rate_l1 = document.getElementById("CacheL1MissRate");
+  miss_rate_l1.innerHTML =
+    (CACHE_DATA_L1.misses * 100) /
+      (CACHE_DATA_L1.calls !== 0 ? CACHE_DATA_L1.calls : 1) +
+    " %";
+
+  let miss_rate_l2 = document.getElementById("CacheL2MissRate");
+  miss_rate_l2.innerHTML =
+    (CACHE_DATA_L2.misses * 100) /
+      (CACHE_DATA_L2.calls !== 0 ? CACHE_DATA_L2.calls : 1) +
+    " %";
+  let cacheDiv = document.getElementById("CacheMissRate");
+  cacheDiv.style.display = "block";
 
   let stallDiv = document.getElementById("stalls");
   let iconEl2 = document.createElement("i");

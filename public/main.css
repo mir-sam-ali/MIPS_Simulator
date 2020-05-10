@@ -12,6 +12,24 @@ body {
 #ide {
   display: inline;
 }
+.Heading {
+  display: flex;
+  align-items: center;
+}
+#CacheMissRate {
+  display: flex;
+  flex-flow: column;
+  padding: 0%;
+  display: none;
+}
+
+.MissData {
+  display: flex;
+  width: 100%;
+  padding: 0px;
+  justify-content: space-evenly;
+  font-size: 1.1rem;
+}
 
 .item {
   margin-left: 10px;

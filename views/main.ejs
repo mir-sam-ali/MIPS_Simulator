@@ -22,13 +22,26 @@
       class="ui inverted segment"
       style="background-color: #17141d; color: white;"
     >
-      <div class="ui inverted secondary pointing menu">
-        <div>
+      <div
+        class="ui inverted secondary pointing menu Heading"
+        style="border: none;"
+      >
+        <div class="HeadingDiv">
           <h1>
             <i class="microchip icon" style="color: #ff8a00;"></i>MIPS Simulator
           </h1>
         </div>
         <div class="right menu">
+          <div class="item" id="CacheMissRate">
+            <h1>
+              <i class="close icon" style="color: #f0021e;"></i> Miss Rates
+            </h1>
+            <div class="MissData">
+              <div>L1: <span id="CacheL1MissRate"></span></div>
+              <div>L2: <span id="CacheL2MissRate"></span></div>
+            </div>
+          </div>
+
           <div class="item">
             <h2 id="cycles"></h2>
           </div>

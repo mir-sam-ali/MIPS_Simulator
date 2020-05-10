@@ -45,12 +45,12 @@
 
     
 
-    <table class="ui inverted celled orange table">
+    <table class="ui inverted celled purple table" style="font-size: 1.4rem; margin-top: 2rem;" >
       <thead>
         <tr>
-          <td>Instruction</td>
+          <th>Instruction</th>
           <%for(let i=0;i<data.cycles;i++){%>
-            <td><%=(i+1)%></td>
+            <th><%=(i+1)%></th>
           <%} %>
         </tr>
       </thead>
@@ -126,7 +126,7 @@
         <td><%=instructionsExecuted[i].join(" ")%></td>
         <% for(let j=0;j<data.cycles;j++){%>
 
-          <td><%=timelineData[j][i]%></td>
+          <td><%=(timelineData[j][i]!=='.')?timelineData[j][i]:""%></td>
           <%
         }
         %>
